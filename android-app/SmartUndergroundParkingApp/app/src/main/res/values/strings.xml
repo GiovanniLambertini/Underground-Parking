@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SmartUndergroundParkingApp</string>
+    <string name="tab_text_1">Sezione A</string>
+    <string name="tab_text_2">Sezione B</string>
+</resources>
