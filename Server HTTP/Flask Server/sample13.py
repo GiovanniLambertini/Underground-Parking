@@ -1,7 +1,7 @@
 # sample11
 # objects
 #pip install flask-sqlalchemy
-
+#pip install pymysql
 
 from flask import Flask
 from config import Config

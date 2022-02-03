@@ -29,8 +29,10 @@ class Config:
 
     # Database
 
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://picuruld:smartparking@localhost/picurul_iot'  # "sqlite:///example.sqlite"    #
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://picuruld_iot:smartparking@localhost/picurul_iot'  # "sqlite:///example.sqlite"    #
     #'mysql://username:password@localhost/db_name'
+    #picuruld:smartparking
+    #picuruldemierezilnic.com
 
 
     SQLALCHEMY_ECHO = False
