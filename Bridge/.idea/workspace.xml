@@ -1,14 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="658895ee-236b-4f91-ad93-3d12bf5839bb" name="Default Changelist" comment="" />
+    <list default="true" id="658895ee-236b-4f91-ad93-3d12bf5839bb" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BridgeMQTT.py" beforeDir="false" afterPath="$PROJECT_DIR$/BridgeMQTT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../parking_code/parking_code.ino" beforeDir="false" afterPath="$PROJECT_DIR$/../parking_code/parking_code.ino" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
   <component name="JupyterTrust" id="75f15a91-03a6-4b5e-992b-9f52ad061114" />
   <component name="ProjectId" id="24F51NJAdlJM3nrIgFkQhE3regy" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showExcludedFiles" value="true" />
@@ -16,11 +24,12 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.sample13">
     <configuration name="BridgeMQTT" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Bridge" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -43,8 +52,31 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="sample13" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Bridge" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../Server HTTP/Flask Server" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../Server HTTP/Flask Server/sample13.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.sample13" />
         <item itemvalue="Python.BridgeMQTT" />
       </list>
     </recent_temporary>
@@ -60,6 +92,10 @@
       <option name="presentableId" value="Default" />
       <updated>1643213277490</updated>
       <workItem from="1643213287962" duration="5931000" />
+      <workItem from="1643633652268" duration="1969000" />
+      <workItem from="1643709145659" duration="1457000" />
+      <workItem from="1643811010748" duration="8970000" />
+      <workItem from="1643883089655" duration="4373000" />
     </task>
     <servers />
   </component>
@@ -67,32 +103,37 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="223" y="63" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1643214261537">
+    <state x="223" y="63" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1643896921255">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state x="223" y="63" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.816@0.0.1536.816" timestamp="1643214261537" />
-    <state width="1493" height="331" key="GridCell.Tab.0.bottom" timestamp="1643238175084">
+    <state x="223" y="63" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.816@0.0.1536.816" timestamp="1643896921255" />
+    <state width="1493" height="331" key="GridCell.Tab.0.bottom" timestamp="1643896717521">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="331" key="GridCell.Tab.0.bottom/0.0.1536.816@0.0.1536.816" timestamp="1643238175084" />
-    <state width="1493" height="331" key="GridCell.Tab.0.center" timestamp="1643238175084">
+    <state width="1493" height="331" key="GridCell.Tab.0.bottom/0.0.1536.816@0.0.1536.816" timestamp="1643896717521" />
+    <state width="1493" height="331" key="GridCell.Tab.0.center" timestamp="1643896717521">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="331" key="GridCell.Tab.0.center/0.0.1536.816@0.0.1536.816" timestamp="1643238175084" />
-    <state width="1493" height="331" key="GridCell.Tab.0.left" timestamp="1643238175084">
+    <state width="1493" height="331" key="GridCell.Tab.0.center/0.0.1536.816@0.0.1536.816" timestamp="1643896717521" />
+    <state width="1493" height="331" key="GridCell.Tab.0.left" timestamp="1643896717520">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="331" key="GridCell.Tab.0.left/0.0.1536.816@0.0.1536.816" timestamp="1643238175084" />
-    <state width="1493" height="331" key="GridCell.Tab.0.right" timestamp="1643238175084">
+    <state width="1493" height="331" key="GridCell.Tab.0.left/0.0.1536.816@0.0.1536.816" timestamp="1643896717520" />
+    <state width="1493" height="331" key="GridCell.Tab.0.right" timestamp="1643896717521">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="331" key="GridCell.Tab.0.right/0.0.1536.816@0.0.1536.816" timestamp="1643238175084" />
+    <state width="1493" height="331" key="GridCell.Tab.0.right/0.0.1536.816@0.0.1536.816" timestamp="1643896717521" />
     <state x="277" y="51" key="SettingsEditor" timestamp="1643213823530">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
     <state x="277" y="51" key="SettingsEditor/0.0.1536.816@0.0.1536.816" timestamp="1643213823530" />
+    <state x="465" y="232" key="com.intellij.ide.util.TipDialog" timestamp="1643883124115">
+      <screen x="0" y="0" width="1536" height="816" />
+    </state>
+    <state x="465" y="232" key="com.intellij.ide.util.TipDialog/0.0.1536.816@0.0.1536.816" timestamp="1643883124115" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Bridge$BridgeMQTT.coverage" NAME="BridgeMQTT Coverage Results" MODIFIED="1643217453967" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Bridge$sample13.coverage" NAME="sample13 Coverage Results" MODIFIED="1643896644104" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../Server HTTP/Flask Server" />
   </component>
 </project>

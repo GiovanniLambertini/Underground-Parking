@@ -25,7 +25,6 @@
 
 #define NUM_SLOTS 6
 #define DISPLAY_SEGMENTS 8
-#define COMMON_CATHODE 0
 
 #define ROWS 4
 #define COLS 4
@@ -37,6 +36,9 @@
 #define COL2 11
 #define COL3 12
 #define COL4 13
+#define CODE_LENGTH 7
+#define INITIAL_CHAR '*'
+#define FINAL_CHAR '#'
 
 #define INITIAL_STATE 0
 #define ACCESS_REQUEST 1
@@ -52,6 +54,15 @@ int segments[DISPLAY_SEGMENTS] {LED_A, LED_B, LED_C, LED_D, LED_E, LED_F, LED_G,
 volatile int state;
 int available_parks;
 int bluetoothData;
+char buttonCode[CODE_LENGTH];
+int buttonState;                                                                                 //0: stato iniziale, 1: *, 2:*X, 3:*XX, 4:*XXX, 5:*XXXX, 6:*XXXXX, 7:*XXXXX#
+int bluetoothState;                                                                              //0: stato iniziale, 1: ricevuto 0xff, 2:
+
+/*
+ 1) Solo aggiornamento posti
+2) Aggiornamneto posti con entrata
+3) Aggiornamento posti con uscita
+ */
 
 // Matrice bottoni
 char buttonMatrix[ROWS][COLS] = {
@@ -83,6 +94,7 @@ void setup() {
   int i;
    
   state=0;
+  buttonState=0;
   bluetoothData=-1;
   available_parks=0;
   
@@ -122,56 +134,69 @@ void setup() {
   servo.write(angle);
 
   attachInterrupt(digitalPinToInterrupt(BARRIER_SENSOR1), checkBarrierSensor1, FALLING );    
-  attachInterrupt(digitalPinToInterrupt(BARRIER_SENSOR2), checkBarrierSensor2, RISING );   
+  attachInterrupt(digitalPinToInterrupt(BARRIER_SENSOR2), checkBarrierSensor2, FALLING );   
 }
 
 void loop() {
-  /*
-  for(int i = 0; i < 10; i++) //print
-  {
-    display_number(i);
-    delay(1000);
-  }
-  */
-
-  // Leggo il bottone premuto
-  char button = customKeypad.getKey();
+  
+  char button = customKeypad.getKey();        // Leggo il bottone premuto
 
   if (button) {                               //Se è stato premuto un bottone
     Serial.println(button);
+    if (button == INITIAL_CHAR)
+      buttonState=1;
+    else if (buttonState == CODE_LENGTH-1){
+      if (button == FINAL_CHAR){
+         buttonCode[buttonState]=button;
+
+         //Invia il pacchetto dati con il codice inserito
+         Serial1.write(0xff);
+         Serial1.write((char) CODE_LENGTH);
+         for (int i=0; i<CODE_LENGTH; i++)
+           Serial1.write(buttonCode[i]);                 //Numero dello slot
+         Serial1.write(0xfe);         
+      }
+      buttonState=0;
+    }
+    else if (buttonState>=1){
+      buttonCode[buttonState]=button;
+      buttonState++;
+    }
   }
 
   if (Serial1.available()>0){
     bluetoothData = Serial1.read();
     Serial.print(bluetoothData);
+
+    bluetoothData = bluetoothData%3;
+
+    switch (bluetoothData){
+      case 0:                                               //Prenotazione - Solo diminuzione posto
+        led_RGB(255, 0, 0); // Red
+        servo.write(90);               
+        delay(3000);
+        servo.write(10);    
+        break;
+  
+      case 1:                                               //Prenotazione - Solo alzata sbarra
+        led_RGB(0, 255, 0); //Green
+        servo.write(90);               
+        delay(3000);
+        servo.write(10);   
+        break;
+  
+      case 2:                                               //Senza prenotazione - Diminuzione posto e alzata sbarra
+        led_RGB(255, 150, 0); //Orange
+        servo.write(90);               
+        delay(3000);
+        servo.write(10);   
+        break;
+  
+      default:                                              //Se non ho dati sulla seriale
+        break;
+    }
   }
-  bluetoothData = bluetoothData%3;
-
-  switch (bluetoothData){
-    case 0:                                               //Prenotazione - Solo diminuzione posto
-      led_RGB(255, 0, 0); // Red
-      servo.write(90);               
-      delay(3000);
-      servo.write(10);    
-      break;
-
-    case 1:                                               //Prenotazione - Solo alzata sbarra
-      led_RGB(0, 255, 0); //Green
-      servo.write(90);               
-      delay(3000);
-      servo.write(10);   
-      break;
-
-    case 2:                                               //Senza prenotazione - Diminuzione posto e alzata sbarra
-      led_RGB(255, 150, 0); //Orange
-      servo.write(90);               
-      delay(3000);
-      servo.write(10);   
-      break;
-
-    default:                                              //Se non ho dati sulla seriale
-      break;
-  }
+  
 
   /*
   
@@ -195,28 +220,47 @@ void loop() {
     } 
   }
   */
-  
 
   for (int i=0; i<NUM_SLOTS; i++){
+    checkSlot(i);
+  }
+
+  //delay(3000);
+}
+
+
+void display_number(int num) {                //Stampa un numero sul display 7 segmenti e accendi il led di conseguenza
+  
+  for(int i=0; i<DISPLAY_SEGMENTS; i++) {
+    digitalWrite(segments[i], displayNumber[num][i]);
+  }
+
+  if (num == 0)
+    led_RGB(255, 0, 0);           //Led rosso (0 posti)
+  else if (num <= 2)
+    led_RGB(255,165,0);           //Led arancione (1 o 2 posti)
+  else
+    led_RGB(0, 255, 0);           //Led verde (più di 2 posti)
+}
+
+void checkSlot(int i){
+  int newState = digitalRead(slots[i]);
+  if (slotsState[i] != newState){          //Se lo stato del pacheggio è cambiato
+    slotsState[i] = newState;
+    
+    //Invia il pacchetto dati con l'aggiornamento dello stato del posto
+    Serial1.write(0xff);
+    Serial1.write(0x02);
+    Serial1.write((char) i+1);                 //Numero dello slot
+    Serial1.write((char) slotsState[i]);       //1 - Libero, 0 - Occupato
+    Serial1.write(0xfe);
+
     Serial.print("Stato parcheggio");
     Serial.print(i+1);
     Serial.print(": ");
     Serial.println(digitalRead(slots[i])); 
   }
-
-  delay(3000);
 }
-
-
-void display_number(int num) // print any number on the segment
-{ 
-  //setState(COMMON_CATHODE);//turn off the segment
- 
-  for(int i=0; i<DISPLAY_SEGMENTS; i++) {
-    digitalWrite(segments[i], displayNumber[num][i]);
-  }
-}
-
 
 void checkBarrierSensor1(){
   //if (state==

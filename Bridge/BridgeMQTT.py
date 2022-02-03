@@ -3,20 +3,29 @@ import serial.tools.list_ports
 import numpy as np
 import urllib.request
 import time
+import random
 
 # pip install pymqtt
 import paho.mqtt.client as mqtt
 
 PORT_NAME = 'COM7'                                        #COM Bluetooth
+BASE_TOPIC = 'iot/underground_smart_parking/A/'
+REQUEST_CODE_TOPIC = BASE_TOPIC + 'request_code'
+CLIENT_ID = BASE_TOPIC + 'client_id'
+
+INITIAL_CHAR = '*'
+FINAL_CHAR = '#'
+
 
 class Bridge():
-
 
     def setupSerial(self):
         # open serial port
         self.ser = None
-        print("list of available ports: ")
+        self.bookedCodes = []
+        self.usedCodes = []
 
+        print("list of available ports: ")
         ports = serial.tools.list_ports.comports()
         self.portname=None
         for port in ports:
@@ -42,7 +51,7 @@ class Bridge():
         self.clientMQTT.on_connect = self.on_connect
         self.clientMQTT.on_message = self.on_message
         print("connecting...")
-        self.clientMQTT.connect("127.0.0.1", 1883, 60)
+        self.clientMQTT.connect("broker.emqx.io", 1883, 60)
 
         self.clientMQTT.loop_start()
 
@@ -51,18 +60,20 @@ class Bridge():
     def on_connect(self, client, userdata, flags, rc):
         print("Connected with result code " + str(rc))
 
-        # Subscribing in on_connect() means that if we lose the connection and
-        # reconnect then subscriptions will be renewed.
-        self.clientMQTT.subscribe("light")
+        self.clientMQTT.subscribe(REQUEST_CODE_TOPIC)
 
 
-
-
-    # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, msg):
         print(msg.topic + " " + str(msg.payload))
-        if msg.topic=='light':
-            self.ser.write (msg.payload)
+        if REQUEST_CODE_TOPIC in msg.topic:
+            #self.ser.write (msg.payload)
+            accessCode = random.randint(0, 99999)
+            self.clientMQTT.publish(CLIENT_ID, '{:d}'.format(accessCode))
+            self.bookedCodes.append(accessCode)
+
+        elif PRICE_TOPIC in msg.topc:
+            ...
+
 
     def setup(self):
         self.setupSerial()
