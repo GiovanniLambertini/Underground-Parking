@@ -34,7 +34,7 @@ def page_not_found(error):
 @app.route('/')
 def testoHTML():
     if request.accept_mimetypes['application/json']:
-        return jsonify( {'text':'I Love IoT'}), '200 OK'
+        return jsonify( {'text':'Questo è il nuovo sito di MaxFelicitas, in collaborazione con Alex Costa'}), '200 OK'
     else:
         return '<h1>I love IoT</h1>'
 
