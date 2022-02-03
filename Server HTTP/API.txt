@@ -1,0 +1,17 @@
+/booking
+body: 
+userId:<userId>
+type:<carOrDevice>
+
+/enter
+body:
+userId:<userId>
+type:<carOrDevice>
+
+/exit
+body:
+userId:<userId>
+type:<carOrDevice>
+
+venv_dummy
+https://picuruldemierezilnic.com/flask

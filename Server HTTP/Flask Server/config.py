@@ -29,16 +29,10 @@ class Config:
 
     # Database
 
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://picuruld_iot:smartparking@localhost:3306/picuruld_iot'  # "sqlite:///example.sqlite"    #
-    #'mysql://username:password@localhost/db_name'
-    #picuruld:smartparking
-    #picuruldemierezilnic.com
-
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://picuruld_iot:smartparking@localhost:3306/picuruld_iot'       #'mysql://username:password@localhost/db_name'
 
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     CACHE_TYPE = "simple"  # Flask-Caching related configs
     CACHE_DEFAULT_TIMEOUT =  100
-
-

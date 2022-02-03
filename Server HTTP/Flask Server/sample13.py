@@ -41,9 +41,13 @@ def testoHTML():
 
 @app.route('/lista', methods=['GET'])
 def stampalsita():
-    elenco=Sensorfeed.query.order_by(Sensorfeed.id.desc()).limit(2).all()
+    elenco=Sensorfeed.query.order_by(Sensorfeed.id.desc()).limit(10).all()
 
-    return render_template('lista3.html', lista=elenco)
+    string=''
+    for el in elenco:
+        string+=el.value+', '
+
+    return string
 
 @app.route('/addinlista/<val>', methods=['POST'])
 def addinlista(val):
@@ -54,12 +58,11 @@ def addinlista(val):
     return str(sf.id)
 
 
-
 if __name__ == '__main__':
 
     if True:  # first time (?)
         db.create_all()
 
-    port = 2000
+    port = 80
     interface = '0.0.0.0'
     app.run(host=interface,port=port)
