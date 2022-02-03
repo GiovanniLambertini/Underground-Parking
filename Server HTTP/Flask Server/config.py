@@ -29,7 +29,7 @@ class Config:
 
     # Database
 
-    SQLALCHEMY_DATABASE_URI = 'mysql://picurul_iot:smartparking@localhost/picurul_iot'      #'mysql://username:password@localhost/db_name'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://picurul_iot:smartparking@localhost/picurul_iot'      #'mysql://username:password@localhost/db_name'
 
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False

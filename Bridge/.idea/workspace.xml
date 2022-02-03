@@ -3,8 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="658895ee-236b-4f91-ad93-3d12bf5839bb" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BridgeMQTT.py" beforeDir="false" afterPath="$PROJECT_DIR$/BridgeMQTT.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../parking_code/parking_code.ino" beforeDir="false" afterPath="$PROJECT_DIR$/../parking_code/parking_code.ino" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Server HTTP/Flask Server/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/../Server HTTP/Flask Server/config.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -95,7 +94,7 @@
       <workItem from="1643633652268" duration="1969000" />
       <workItem from="1643709145659" duration="1457000" />
       <workItem from="1643811010748" duration="8970000" />
-      <workItem from="1643883089655" duration="4373000" />
+      <workItem from="1643883089655" duration="7037000" />
     </task>
     <servers />
   </component>
@@ -107,22 +106,22 @@
       <screen x="0" y="0" width="1536" height="816" />
     </state>
     <state x="223" y="63" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.816@0.0.1536.816" timestamp="1643896921255" />
-    <state width="1493" height="331" key="GridCell.Tab.0.bottom" timestamp="1643896717521">
+    <state width="1493" height="330" key="GridCell.Tab.0.bottom" timestamp="1643897647559">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="331" key="GridCell.Tab.0.bottom/0.0.1536.816@0.0.1536.816" timestamp="1643896717521" />
-    <state width="1493" height="331" key="GridCell.Tab.0.center" timestamp="1643896717521">
+    <state width="1493" height="330" key="GridCell.Tab.0.bottom/0.0.1536.816@0.0.1536.816" timestamp="1643897647559" />
+    <state width="1493" height="330" key="GridCell.Tab.0.center" timestamp="1643897647559">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="331" key="GridCell.Tab.0.center/0.0.1536.816@0.0.1536.816" timestamp="1643896717521" />
-    <state width="1493" height="331" key="GridCell.Tab.0.left" timestamp="1643896717520">
+    <state width="1493" height="330" key="GridCell.Tab.0.center/0.0.1536.816@0.0.1536.816" timestamp="1643897647559" />
+    <state width="1493" height="330" key="GridCell.Tab.0.left" timestamp="1643897647559">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="331" key="GridCell.Tab.0.left/0.0.1536.816@0.0.1536.816" timestamp="1643896717520" />
-    <state width="1493" height="331" key="GridCell.Tab.0.right" timestamp="1643896717521">
+    <state width="1493" height="330" key="GridCell.Tab.0.left/0.0.1536.816@0.0.1536.816" timestamp="1643897647559" />
+    <state width="1493" height="330" key="GridCell.Tab.0.right" timestamp="1643897647559">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="331" key="GridCell.Tab.0.right/0.0.1536.816@0.0.1536.816" timestamp="1643896717521" />
+    <state width="1493" height="330" key="GridCell.Tab.0.right/0.0.1536.816@0.0.1536.816" timestamp="1643897647559" />
     <state x="277" y="51" key="SettingsEditor" timestamp="1643213823530">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
@@ -134,6 +133,6 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Bridge$BridgeMQTT.coverage" NAME="BridgeMQTT Coverage Results" MODIFIED="1643217453967" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/Bridge$sample13.coverage" NAME="sample13 Coverage Results" MODIFIED="1643896644104" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../Server HTTP/Flask Server" />
+    <SUITE FILE_PATH="coverage/Bridge$sample13.coverage" NAME="sample13 Coverage Results" MODIFIED="1643897647538" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../Server HTTP/Flask Server" />
   </component>
 </project>
