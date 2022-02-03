@@ -60,6 +60,6 @@ if __name__ == '__main__':
     if True:  # first time (?)
         db.create_all()
 
-    port = 80
+    port = 2000
     interface = '0.0.0.0'
     app.run(host=interface,port=port)
