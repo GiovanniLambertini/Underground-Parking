@@ -9,7 +9,7 @@ import random
 import paho.mqtt.client as mqtt
 
 PORT_NAME = 'COM7'                                        #COM Bluetooth
-BASE_TOPIC = 'iot/underground_smart_parking/A/'
+BASE_TOPIC = 'iot/underground_smart_parking/parking_duomo/A/'
 REQUEST_CODE_TOPIC = BASE_TOPIC + 'request_code'
 CLIENT_ID = BASE_TOPIC + 'client_id'
 

@@ -2,16 +2,19 @@
 body: 
 userId:<userId>
 type:<carOrDevice>
+location:<locationName>
 
 /enter
 body:
 userId:<userId>
 type:<carOrDevice>
+location:<locationName>
 
 /exit
 body:
 userId:<userId>
 type:<carOrDevice>
+location:<locationName>
 
 venv_dummy
 https://picuruldemierezilnic.com/flask
