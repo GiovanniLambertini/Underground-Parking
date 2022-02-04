@@ -17,6 +17,14 @@ app.config.from_object(myconfig)
 # db creation
 db = SQLAlchemy(app)
 
+class Sensorfeed(db.Model):
+    id = db.Column('student_id', db.Integer, primary_key = True)
+    value = db.Column(db.String(100))
+    timestamp = db.Column(db.DateTime(timezone=True), nullable=False,  default=datetime.utcnow)
+
+    def __init__(self, value):
+        self.value = value
+
 class User(db.Model):
     userId = db.Column(db.Integer, primary_key = True)
     type = db.Column(db.String(3))                                                                          #car o app
@@ -24,6 +32,8 @@ class User(db.Model):
 
     def __init__(self, value):
         self.value = value
+
+'''
 
 class Parking(db.Model):
     locationId = db.Column(db.Integer, primary_key = True)
@@ -71,14 +81,8 @@ class Parked(db.Model):
 
     def __init__(self, value):
         self.value = value
-
-class Sensorfeed(db.Model):
-    id = db.Column('student_id', db.Integer, primary_key = True)
-    value = db.Column(db.String(100))
-    timestamp = db.Column(db.DateTime(timezone=True), nullable=False,  default=datetime.utcnow)
-
-    def __init__(self, value):
-        self.value = value
+        
+'''
 
 
 
@@ -93,6 +97,15 @@ def testoHTML():
     else:
         return '<h1>I love IoT</h1>'
 
+@app.route('/prova', methods=['GET'])
+def prova():
+    elenco=User.query.order_by(User.userId.desc()).limit(10).all()
+
+    string = ''
+    for el in elenco:
+        string += str(el.userId) + ', '
+
+    return string
 
 @app.route('/booking', methods=['POST'])
 def bookParkSlot():
@@ -115,6 +128,14 @@ def addinlista(val):
     db.session.add(sf)
     db.session.commit()
     return str(sf.id)
+
+@app.route('/add/<user>', methods=['POST'])
+def addSlotAvailability(user):
+    user = User(user)
+
+    db.session.add(user)
+    db.session.commit()
+    return "ok"
 
 
 if __name__ == '__main__':

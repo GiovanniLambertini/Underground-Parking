@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="example" uuid="2ec9a60b-c8ac-4a05-bd69-fb570c1686ba">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:C:\Users\Giovanni Lambertini\Desktop\Underground Smart Parking\Server HTTP\Flask Server\example.sqlite</jdbc-url>
+    </data-source>
+  </component>
+</project>
