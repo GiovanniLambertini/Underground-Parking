@@ -33,8 +33,6 @@ class User(db.Model):
     def __init__(self, value):
         self.value = value
 
-'''
-
 class Parking(db.Model):
     locationId = db.Column(db.Integer, primary_key = True)
     locationName = db.Column(db.String(50))
@@ -51,7 +49,7 @@ class Slot(db.Model):
 
     def __init__(self, value):
         self.value = value
-
+'''
 class SlotAvailability(db.Model):
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
     slotId = db.Column(db.Integer, db.ForeignKey('slot.slotId'), primary_key=True)
@@ -62,7 +60,7 @@ class SlotAvailability(db.Model):
 
     def __init__(self, value):
         self.value = value
-
+'''
 class Booking(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('user.userId'), primary_key=True)
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
@@ -81,8 +79,6 @@ class Parked(db.Model):
 
     def __init__(self, value):
         self.value = value
-        
-'''
 
 
 
@@ -145,4 +141,4 @@ if __name__ == '__main__':
 
     port = 80
     interface = '0.0.0.0'
-    app.run(host=interface,port=port)
+    app.run(host=interface, port=port)

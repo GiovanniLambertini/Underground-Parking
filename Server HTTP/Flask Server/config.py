@@ -15,9 +15,9 @@ class Config:
     FLASK_RUN_HOST = '0.0.0.0'
     FLASK_RUN_PORT = 80
 
-    FLASK_DEBUG = 0
+    FLASK_DEBUG = 1
     #FLASK_ENV = "development" #production
-    FLASK_ENV = "production"  # production
+    FLASK_ENV = "development"  # production
 
     DEBUG = False
     TESTING = False #True

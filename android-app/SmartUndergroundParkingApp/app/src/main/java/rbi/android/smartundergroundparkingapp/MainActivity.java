@@ -45,8 +45,7 @@ public class MainActivity extends AppCompatActivity  {
     public static final int MESSAGE_COUNT = 10;
 
     //Topic used to publish generated demo data
-    public static final String TOPIC = "iot/underground_smart_parking1/prova";
-
+    public static final String BASE_TOPIC = "iot/underground_smart_parking/A/";
 
     private ActivityMainBinding binding;
 
@@ -73,7 +72,4 @@ public class MainActivity extends AppCompatActivity  {
         });*/
 
     }
-
-
-
 }
