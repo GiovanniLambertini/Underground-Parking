@@ -49,18 +49,18 @@ class Slot(db.Model):
 
     def __init__(self, value):
         self.value = value
-'''
+
 class SlotAvailability(db.Model):
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
     slotId = db.Column(db.Integer, db.ForeignKey('slot.slotId'), primary_key=True)
     slotSection = db.Column(db.String(2),  db.ForeignKey('slot.slotSection'), primary_key=True)
     timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    availablePlaces =  db.Column(db.Integer)
+    availablePlaces = db.Column(db.Integer)
     isAvailable = db.Column(db.Boolean)
 
     def __init__(self, value):
         self.value = value
-'''
+
 class Booking(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('user.userId'), primary_key=True)
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
