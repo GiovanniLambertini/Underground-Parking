@@ -30,8 +30,8 @@ class User(db.Model):
     type = db.Column(db.String(3))                                                                          #car o app
     licensePlate = db.Column(db.String(10))
 
-    def __init__(self, userId):
-        self.userId = userId
+    def __init__(self, value):
+        self.value = value
 
 class Parking(db.Model):
     locationId = db.Column(db.Integer, primary_key = True)
@@ -39,27 +39,35 @@ class Parking(db.Model):
     numSlots = db.Column(db.Integer)
 
 
+    def __init__(self, value):
+        self.value = value
+
 
 class Slot(db.Model):
     slotId = db.Column(db.Integer, primary_key=True)
     slotSection = db.Column(db.String(2), primary_key=True)
 
+    def __init__(self, value):
+        self.value = value
 
 class SlotAvailability(db.Model):
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
     slotId = db.Column(db.Integer, db.ForeignKey('slot.slotId'), primary_key=True)
     slotSection = db.Column(db.String(2),  db.ForeignKey('slot.slotSection'), primary_key=True)
     timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    availablePlaces =  db.Column(db.Integer)
+    availablePlaces = db.Column(db.Integer)
     isAvailable = db.Column(db.Boolean)
 
-
+    def __init__(self, value):
+        self.value = value
 
 class Booking(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('user.userId'), primary_key=True)
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
     timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
+    def __init__(self, value):
+        self.value = value
 
 
 class Parked(db.Model):
@@ -69,6 +77,8 @@ class Parked(db.Model):
     duration = db.Column(db.Integer)                                                                        #Duration in seconds
     pricePerHour = db.Column(db.Float)
 
+    def __init__(self, value):
+        self.value = value
 
 
 
@@ -131,4 +141,4 @@ if __name__ == '__main__':
 
     port = 80
     interface = '0.0.0.0'
-    app.run(host=interface,port=port)
+    app.run(host=interface, port=port)

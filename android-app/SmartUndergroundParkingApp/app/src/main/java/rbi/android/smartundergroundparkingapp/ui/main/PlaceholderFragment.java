@@ -1,10 +1,11 @@
 package rbi.android.smartundergroundparkingapp.ui.main;
 
+import static rbi.android.smartundergroundparkingapp.MainActivity.BASE_TOPIC;
 import static rbi.android.smartundergroundparkingapp.MainActivity.BROKER_ADDRESS;
 import static rbi.android.smartundergroundparkingapp.MainActivity.BROKER_PORT;
 import static rbi.android.smartundergroundparkingapp.MainActivity.BROKER_URL;
 import static rbi.android.smartundergroundparkingapp.MainActivity.MESSAGE_COUNT;
-import static rbi.android.smartundergroundparkingapp.MainActivity.TOPIC;
+import static rbi.android.smartundergroundparkingapp.MainActivity.BASE_TOPIC;
 import static rbi.android.smartundergroundparkingapp.MainActivity.logger;
 
 import android.content.Context;
@@ -58,6 +59,9 @@ public class PlaceholderFragment extends Fragment {
     LinearLayout a1, a2, a3, a4, a5, a6;
     Button book;
     Context context;
+    MqttClientPersistence persistence;
+    IMqttClient client;
+    MqttConnectOptions options;
 
     public static PlaceholderFragment newInstance(int index) {
         PlaceholderFragment fragment = new PlaceholderFragment();
@@ -76,9 +80,6 @@ public class PlaceholderFragment extends Fragment {
             index = getArguments().getInt(ARG_SECTION_NUMBER);
         }
         pageViewModel.setIndex(index);
-
-
-
     }
 
     @Override
@@ -88,6 +89,9 @@ public class PlaceholderFragment extends Fragment {
 
         binding = FragmentMainBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
+
+        //Generate a random MQTT client ID using the UUID class
+        String clientId = UUID.randomUUID().toString();
 
         price = binding.price;
         access_code = binding.accessCode;
@@ -114,25 +118,24 @@ public class PlaceholderFragment extends Fragment {
             //Background work here
             try{
 
-                //Generate a random MQTT client ID using the UUID class
-                String clientId = UUID.randomUUID().toString();
+
 
                 //Represents a persistent data store, used to store outbound and inbound messages while they
                 //are in flight, enabling delivery to the QoS specified. In that case use a memory persistence.
                 //When the application stops all the temporary data will be deleted.
-                MqttClientPersistence persistence = new MemoryPersistence();
+                persistence = new MemoryPersistence();
 
                 //The the persistence is not passed to the constructor the default file persistence is used.
                 //In case of a file-based storage the same MQTT client UUID should be used
-                IMqttClient client = new MqttClient(
+                client = new MqttClient(
                         String.format("tcp://%s:%d", BROKER_ADDRESS, BROKER_PORT), //Create the URL from IP and PORT
                         clientId,
                         persistence);
 
                 //Define MQTT Connection Options such as reconnection, persistent/clean session and connection timeout
                 //Authentication option can be added -> See AuthProducer example
-                MqttConnectOptions options = new MqttConnectOptions();
-                // options.setAutomaticReconnect(true);
+                options = new MqttConnectOptions();
+                options.setAutomaticReconnect(true);
                 options.setCleanSession(true);
                 options.setConnectionTimeout(10);
 
@@ -162,22 +165,22 @@ public class PlaceholderFragment extends Fragment {
                         System.out.println(String.format("[%s] %s", topic, new String(message.getPayload())));
                         String messageReceived = new String(message.getPayload());
                         switch (topic){
-                            case "iot/underground_smart_parking/A/price":
+                            case BASE_TOPIC + "price":
                                 price.setText(messageReceived+" $/h");
                                 break;
-                            case "iot/underground_smart_parking/A/available_slots":
+                            case BASE_TOPIC + "available_slots":
                                 available_slots.setText("Posti disponibili: " + messageReceived);
                                 break;
-                            case "iot/underground_smart_parking/A/access_code":
+                            case BASE_TOPIC + "access_code":
                                 access_code.setText("CODICE ACCESSO: " + messageReceived);
                                 break;
-                            case "iot/underground_smart_parking/A/1":
+                            case BASE_TOPIC + "1":
                                 if(messageReceived.equals("0"))
                                     a1.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshape, null));
                                 else
                                     a1.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshapetaken, null));
                                 break;
-                            case "iot/underground_smart_parking/A/2":
+                            case BASE_TOPIC + "2":
                                 if(messageReceived.equals("0"))
                                     a2.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshape, null));
                                 else
@@ -185,6 +188,7 @@ public class PlaceholderFragment extends Fragment {
                                 break;
 
                         }
+
                         // iot/underground_smart_parking/A/1
                         // ...
                         // iot/underground_smart_parking/A/6
@@ -207,34 +211,15 @@ public class PlaceholderFragment extends Fragment {
                 e.printStackTrace();
             }
 
+            book.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
 
+                }
+            });
             logger.info("SimpleProducer started ...");
 
             try{
-
-                //Generate a random MQTT client ID using the UUID class
-                String mqttClientId = UUID.randomUUID().toString();
-
-                //Represents a persistent data store, used to store outbound and inbound messages while they
-                //are in flight, enabling delivery to the QoS specified. In that case use a memory persistence.
-                //When the application stops all the temporary data will be deleted.
-                MqttClientPersistence persistence = new MemoryPersistence();
-
-                //The the persistence is not passed to the constructor the default file persistence is used.
-                //In case of a file-based storage the same MQTT client UUID should be used
-                IMqttClient client = new MqttClient(BROKER_URL, mqttClientId, persistence);
-
-                //Define MQTT Connection Options such as reconnection, persistent/clean session and connection timeout
-                //Authentication option can be added -> See AuthProducer example
-                MqttConnectOptions options = new MqttConnectOptions();
-                //options.setAutomaticReconnect(true);
-                options.setCleanSession(true);
-                options.setConnectionTimeout(10);
-
-                //Connect to the target broker
-                client.connect(options);
-
-                logger.info("Connected ! Client Id: {}", mqttClientId);
 
                 //Create an instance of an Engine Temperature Sensor
                 EngineTemperatureSensor engineTemperatureSensor = new EngineTemperatureSensor();
@@ -247,15 +232,17 @@ public class PlaceholderFragment extends Fragment {
                     String payloadString = Double.toString(sensorValue);
 
                     //Internal Method to publish MQTT data using the created MQTT Client
-                    publishData(client, TOPIC, payloadString);
+                    publishData(client, BASE_TOPIC, payloadString);
 
                     //Sleep for 1 Second
                     //  Thread.sleep(1000);
                 }
 
+                //underground_smartparking?id_parking=...  &device_type=0,1
+
                 //Disconnect from the broker and close the connection
-                client.disconnect();
-                client.close();
+               // client.disconnect();
+               // client.close();
 
                 logger.info("Disconnected !");
 
@@ -268,10 +255,6 @@ public class PlaceholderFragment extends Fragment {
                 //UI Thread work here
             });
         });
-
-
-
-
         return root;
     }
 
