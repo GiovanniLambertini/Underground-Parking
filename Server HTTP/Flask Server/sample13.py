@@ -30,8 +30,10 @@ class User(db.Model):
     type = db.Column(db.String(3))                                                                          #car o app
     licensePlate = db.Column(db.String(10))
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, userId, type, licensePlate):
+        self.userId = userId
+        self.type = type
+        self.licensePlate = licensePlate
 
 class Parking(db.Model):
     locationId = db.Column(db.Integer, primary_key = True)
@@ -39,16 +41,18 @@ class Parking(db.Model):
     numSlots = db.Column(db.Integer)
 
 
-    def __init__(self, value):
-        self.value = value
-
+    def __init__(self, locationId, locationName, numSlots):
+        self.locationId = locationId
+        self.locationName = locationName
+        self.numSlots = numSlots
 
 class Slot(db.Model):
     slotId = db.Column(db.Integer, primary_key=True)
     slotSection = db.Column(db.String(2), primary_key=True)
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, slotId, slotSection):
+        self.slotId = slotId
+        self.slotSection = slotSection
 
 class SlotAvailability(db.Model):
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
@@ -58,16 +62,22 @@ class SlotAvailability(db.Model):
     availablePlaces = db.Column(db.Integer)
     isAvailable = db.Column(db.Boolean)
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, locationId, slotId, slotSection, availablePlaces, isAvailable):
+        self.locationId = locationId
+        self.slotId = slotId
+        self.slotSection = slotSection
+        self.availablePlaces = availablePlaces
+        self.isAvailable = isAvailable
 
 class Booking(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('user.userId'), primary_key=True)
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
     timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, userId, locationId):
+        self.userId = userId
+        self.locationId = locationId
+
 
 
 class Parked(db.Model):
@@ -77,8 +87,11 @@ class Parked(db.Model):
     duration = db.Column(db.Integer)                                                                        #Duration in seconds
     pricePerHour = db.Column(db.Float)
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, userId, locationId, duration, pricePerHour):
+        self.userId = userId
+        self.locationId = locationId
+        self.duration = duration
+        self.pricePerHour = pricePerHour
 
 
 
@@ -105,17 +118,13 @@ def prova():
 
 @app.route('/booking', methods=['POST'])
 def bookParkSlot():
-    content = request.json
+    content = request.get_json()
+    booking = Booking(content['userId'], content['location'])
 
+    db.session.add(booking)
+    db.session.commit()
+    return str('Booking OK')
 
-
-    elenco=Sensorfeed.query.order_by(Sensorfeed.id.desc()).limit(10).all()
-
-    string=''
-    for el in elenco:
-        string+=el.value+', '
-
-    return string
 
 @app.route('/addinlista/<val>', methods=['POST'])
 def addinlista(val):
