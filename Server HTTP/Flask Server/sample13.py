@@ -188,12 +188,16 @@ def bookParkSlot():
             if (code, ) not in usedCodes:
                 repeat = False
 
-        availableSlots = db.session.query(Booking).filter(Booking.locationId == body['locationId']).order_by(Booking.timestamp.desc()).with_entities(Booking.availableSlots).first()
-        if availableSlots == None:
-            availableSlots = db.session.query(Parking).filter(Parking.locationId == body['locationId']).with_entities(Parking.numSlots).first()
+        previousAvailableSlots = db.session.query(AvailableSlots).filter(AvailableSlots.locationId == body['locationId']).order_by(AvailableSlots.timestamp.desc()).with_entities(AvailableSlots.numAvailableSlots).first()
+        if previousAvailableSlots == None:
+            previousAvailableSlots = db.session.query(Parking).filter(Parking.locationId == body['locationId']).with_entities(Parking.numSlots).first()
 
-        booking = Booking(body['userId'], body['locationId'], code, availableSlots[0]-1)
+        booking = Booking(body['userId'], body['locationId'], code)
         db.session.add(booking)
+        db.session.commit()
+
+        availableSlots = AvailableSlots(previousAvailableSlots[0] - 1, body['locationId'])
+        db.session.add(availableSlots)
         db.session.commit()
 
         return jsonify({'successful': True, 'code': code}), '200 OK'
@@ -215,8 +219,8 @@ def enter():
     if booking == None:
         return jsonify({'successful': False, 'error': 'Parking reservation not found'}), '401 Unauthorized'
 
-    booking = Parked(booking.userId, booking.locationId, currentPrice)
-    db.session.add(booking)
+    parked = Parked(booking.userId, booking.locationId, currentPrice)
+    db.session.add(parked)
     db.session.commit()
 
     return jsonify({'successful': True}), '200 OK'
@@ -224,6 +228,15 @@ def enter():
 @app.route('/exit', methods=['POST'])
 def exit():
     body = request.get_json()
+
+    previousAvailableSlots = db.session.query(AvailableSlots).filter(AvailableSlots.locationId == body['locationId']).order_by(AvailableSlots.timestamp.desc()).with_entities(AvailableSlots.numAvailableSlots).first()
+    if previousAvailableSlots == None:
+        previousAvailableSlots = db.session.query(Parking).filter(Parking.locationId == body['locationId']).with_entities(Parking.numSlots).first()
+
+    availableSlots = AvailableSlots(previousAvailableSlots[0] + 1, body['locationId'])
+    db.session.add(availableSlots)
+    db.session.commit()
+
 
 @app.route('/add/<user>', methods=['POST'])
 def addSlotAvailability(user):
@@ -288,6 +301,14 @@ def checkBooking():
         booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES)
         if booking.timestamp < booking_minutes_ago:
             booking.bookingStatus = "expired"
+            db.session.commit()
+
+            previousAvailableSlots = db.session.query(AvailableSlots).filter(AvailableSlots.locationId == booking.locationId).order_by(AvailableSlots.timestamp.desc()).with_entities(AvailableSlots.numAvailableSlots).first()
+            if previousAvailableSlots == None:
+                previousAvailableSlots = db.session.query(Parking).filter(Parking.locationId == booking.locationId).with_entities(Parking.numSlots).first()
+
+            availableSlots = AvailableSlots(previousAvailableSlots[0] + 1, booking.locationId)
+            db.session.add(availableSlots)
             db.session.commit()
 
 if __name__ == '__main__':
