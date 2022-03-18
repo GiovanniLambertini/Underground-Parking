@@ -210,7 +210,7 @@ def enter():
     db.session.add(booking)
     db.session.commit()
 
-    return jsonify({'successful': True, 'code': code}), '200 OK'
+    return jsonify({'successful': True}), '200 OK'
 
 @app.route('/exit', methods=['POST'])
 def exit():
@@ -223,6 +223,53 @@ def addSlotAvailability(user):
     db.session.add(user)
     db.session.commit()
     return "ok"
+
+
+@app.route('/parked', methods=['POST'])
+def parked():
+    content = request.get_json()
+    parked = Parked(content['userId'], content['locationId'], content['pricePerHour'])
+
+    db.session.add(parked)
+    db.session.commit()
+    return str('Parked OK')
+
+@app.route('/parking', methods=['POST'])
+def parking():
+    content = request.get_json()
+    parking = Parking(content['locationId'], content['locationName'], content['numSlots'])
+
+    db.session.add(parking)
+    db.session.commit()
+    return str('Parking OK')
+
+@app.route('/slot', methods=['POST'])
+def slot():
+    content = request.get_json()
+    slot = Slot(content['slotId'], content['slotSection'], content['isAvailable'])
+
+    db.session.add(slot)
+    db.session.commit()
+    return str('slot OK')
+
+@app.route('/slot_availability', methods=['POST'])
+def slot_availability():
+    content = request.get_json()
+    slot_availability = SlotAvailability(content['locationId'], content['slotId'], content['slotSection'])
+
+    db.session.add(slot_availability)
+    db.session.commit()
+    return str('slot_availability OK')
+
+@app.route('/user', methods=['POST'])
+def user():
+    content = request.get_json()
+    user = User(content['UserId'], content['type'], content['licensePlate'])
+
+    db.session.add(user)
+    db.session.commit()
+    return str('user OK')
+
 
 def checkBooking():
   threading.Timer(1.0, checkBooking).start()
