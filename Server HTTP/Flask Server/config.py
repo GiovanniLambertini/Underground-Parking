@@ -30,7 +30,6 @@ class Config:
     # Database
 
     SQLALCHEMY_DATABASE_URI = "sqlite:///example.sqlite" #'mysql+pymysql://picuruld_iot:smartparking@localhost:3306/picuruld_iot'       #'mysql://username:password@localhost/db_name'
-    #
 
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False

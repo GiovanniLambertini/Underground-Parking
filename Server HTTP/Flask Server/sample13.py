@@ -1,5 +1,3 @@
-# sample11
-# objects
 #pip install flask-sqlalchemy
 #pip install pymysql
 
@@ -7,23 +5,22 @@ from flask import Flask
 from config import Config
 from flask import render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
+import random
+import paho.mqtt.client as mqtt
+import threading
 
 appname = "IOT - sample1"
 app = Flask(appname)
 myconfig = Config
 app.config.from_object(myconfig)
 
-# db creation
+# db creationpip in
 db = SQLAlchemy(app)
 
-class Sensorfeed(db.Model):
-    id = db.Column('student_id', db.Integer, primary_key = True)
-    value = db.Column(db.String(100))
-    timestamp = db.Column(db.DateTime(timezone=True), nullable=False,  default=datetime.utcnow)
-
-    def __init__(self, value):
-        self.value = value
+CODE_LENGTH=5
+BOOKING_MINUTES = 35
+currentPrice = 0
 
 class User(db.Model):
     userId = db.Column(db.Integer, primary_key = True)
@@ -59,52 +56,87 @@ class SlotAvailability(db.Model):
     slotId = db.Column(db.Integer, db.ForeignKey('slot.slotId'), primary_key=True)
     slotSection = db.Column(db.String(2),  db.ForeignKey('slot.slotSection'), primary_key=True)
     timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    availablePlaces = db.Column(db.Integer)
     isAvailable = db.Column(db.Boolean)
 
-    def __init__(self, locationId, slotId, slotSection, availablePlaces, isAvailable):
+    def __init__(self, locationId, slotId, slotSection, isAvailable):
         self.locationId = locationId
         self.slotId = slotId
         self.slotSection = slotSection
-        self.availablePlaces = availablePlaces
         self.isAvailable = isAvailable
 
 class Booking(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('user.userId'), primary_key=True)
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
-    timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow, primary_key=True)
+    code = db.Column(db.String(7))
+    availableSlots = db.Column(db.Integer)
+    bookingStatus = db.Column(db.String(10), default="valid")
 
     def __init__(self, userId, locationId):
         self.userId = userId
         self.locationId = locationId
 
-
+    def __init__(self, userId, locationId, code, availableSlots):
+        self.userId = userId
+        self.locationId = locationId
+        self.code = code
+        self.availableSlots = availableSlots
 
 class Parked(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('user.userId'), primary_key=True)
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
-    entranceTimestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)      #Booking/Entrance timestamp
-    duration = db.Column(db.Integer)                                                                        #Duration in seconds
+    entranceTimestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)      #Entrance timestamp
+    exitTimestamp = db.Column(db.DateTime(timezone=True), nullable=True)                                    #Exit timestamp
     pricePerHour = db.Column(db.Float)
 
-    def __init__(self, userId, locationId, duration, pricePerHour):
+    def __init__(self, userId, locationId, pricePerHour):
         self.userId = userId
         self.locationId = locationId
-        self.duration = duration
         self.pricePerHour = pricePerHour
 
+class MQTTSubscriber():
+
+    def setupMQTT(self):
+        self.clientMQTT = mqtt.Client()
+        self.clientMQTT.on_connect = self.on_connect
+        self.clientMQTT.on_message = self.on_message
+        print("connecting mqtt...")
+        self.clientMQTT.connect("broker.emqx.io", 1883, 60)
+
+        self.clientMQTT.loop_start()
+
+
+
+    def on_connect(self, client, userdata, flags, rc):
+        print("Connected with result code " + str(rc))
+
+        self.clientMQTT.subscribe(REQUEST_CODE_TOPIC)
+
+
+    def on_message(self, client, userdata, msg):
+        print(msg.topic + " " + str(msg.payload))
+        if REQUEST_CODE_TOPIC in msg.topic:
+            #self.ser.write (msg.payload)
+            accessCode = random.randint(0, 99999)
+            self.clientMQTT.publish(CLIENT_ID, '{:d}'.format(accessCode))
+            self.bookedCodes.append(accessCode)
+
+        elif PRICE_TOPIC in msg.topc:
+            ...
+
+
+    def setup(self):
+        self.setupMQTT()
 
 
 @app.errorhandler(404)
 def page_not_found(error):
-    return 'Errore', 404
+    return 'Page not found', 404
 
 @app.route('/')
 def testoHTML():
-    if request.accept_mimetypes['application/json']:
-        return jsonify( {'text':'Alex Costa'}), '200 OK'
-    else:
-        return '<h1>I love IoT</h1>'
+    #if request.accept_mimetypes['application/json']:
+    return jsonify( {'successful':True, 'second':'Gio'}), '200 OK'
 
 @app.route('/prova', methods=['GET'])
 def prova():
@@ -118,21 +150,71 @@ def prova():
 
 @app.route('/booking', methods=['POST'])
 def bookParkSlot():
-    content = request.get_json()
-    booking = Booking(content['userId'], content['location'])
+    body = request.get_json()
 
+    if body['type'] != 'car' and body['type'] != 'device':
+        return jsonify( {'successful':False, 'error':'Type must be car or device'}), '400 Bad Request'
+    if body['type'] == 'car':
+        booking = Booking(body['userId'], body['locationId'])
+        db.session.add(booking)
+        db.session.commit()
+
+        return jsonify( {'successful':True}), '200 OK'
+
+    else:
+        repeat=True
+        while (repeat):
+            #Generate 5 digits code
+            code = "*"
+            for i in range(CODE_LENGTH):
+                code += str(random.randint(0,9))
+            code += "#"
+
+            #Controllo che il codice non sia già stato assegnato
+            now = datetime.fromisoformat(datetime.utcnow().isoformat())
+            booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES*2)
+            usedCodes = db.session.query(Booking).filter(Booking.locationId == body['locationId'], Booking.timestamp >= booking_minutes_ago).with_entities(Booking.code).all()
+
+            if (code, ) not in usedCodes :
+                repeat = False
+
+        availableSlots = db.session.query(Booking).filter(Booking.locationId == body['locationId']).order_by(Booking.timestamp.desc()).with_entities(Booking.availableSlots).first()
+        if (True): #availableSlots == None
+            availableSlots = db.session.query(Parking).filter(Parking.locationId == body['locationId']).with_entities(Parking.numSlots).first()
+            print (availableSlots)
+
+        booking = Booking(body['userId'], body['locationId'], code, availableSlots)
+        db.session.add(booking)
+        db.session.commit()
+
+        return jsonify({'successful': True, 'code': code}), '200 OK'
+
+#Controllo se l'utente ha prenotato, inserisco il parcheggio
+@app.route('/enter', methods=['POST'])
+def enter():
+    body = request.get_json()
+    now = datetime.fromisoformat(datetime.utcnow().isoformat())
+    booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES)
+
+    if body['type'] != 'car' and body['type'] != 'device':
+        return jsonify( {'successful':False, 'error':'Type must be car or device'}), '400 Bad Request'
+    if body['type'] == 'device':
+        booking = db.session.query(Booking).filter(Booking.code == body['code'], Booking.locationId == body['locationId'], Booking.timestamp >= booking_minutes_ago).order_by(Booking.timestamp.desc()).first()
+    else:
+        booking = db.session.query(Booking).filter(Booking.userId == body['userId'], Booking.locationId == body['locationId'], Booking.timestamp >= booking_minutes_ago).order_by(Booking.timestamp.desc()).first()
+
+    if booking == None:
+        return jsonify({'successful': False, 'error': 'Parking reservation not found'}), '401 Unauthorized'
+
+    booking = Parked(booking.userId, booking.locationId, currentPrice)
     db.session.add(booking)
     db.session.commit()
-    return str('Booking OK')
 
+    return jsonify({'successful': True, 'code': code}), '200 OK'
 
-@app.route('/addinlista/<val>', methods=['POST'])
-def addinlista(val):
-    sf = Sensorfeed(val)
-
-    db.session.add(sf)
-    db.session.commit()
-    return str(sf.id)
+@app.route('/exit', methods=['POST'])
+def exit():
+    body = request.get_json()
 
 @app.route('/add/<user>', methods=['POST'])
 def addSlotAvailability(user):
@@ -142,6 +224,10 @@ def addSlotAvailability(user):
     db.session.commit()
     return "ok"
 
+def checkBooking():
+  threading.Timer(1.0, checkBooking).start()
+  availableSlots = db.session.query(Booking).filter(Booking.bookingStatus == 'valid').with_entities(Booking.availableSlots).first()
+
 
 if __name__ == '__main__':
 
@@ -150,4 +236,7 @@ if __name__ == '__main__':
 
     port = 80
     interface = '0.0.0.0'
+
+    checkBooking()
+
     app.run(host=interface, port=port)

@@ -1,20 +1,30 @@
 /booking
-body: 
+body richiesta:
 userId:<userId>
 type:<carOrDevice>
-location:<locationName>
+location:<locationId>
+body risposta:
+   -car:
+        esito prenotazione
+   -device:
+        esito prenotazione
+        codice accesso
 
 /enter
 body:
-userId:<userId>
 type:<carOrDevice>
-location:<locationName>
+if car:
+    userId:<userId>
+    location:<locationId>
+if device:
+    code: <accessCode>
+    location:<locationId>
 
 /exit
 body:
 userId:<userId>
 type:<carOrDevice>
-location:<locationName>
+location:<locationId>
 
 venv_dummy
 https://picuruldemierezilnic.com/flask
