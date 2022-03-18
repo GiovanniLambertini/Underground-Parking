@@ -19,7 +19,7 @@ app.config.from_object(myconfig)
 db = SQLAlchemy(app)
 
 CODE_LENGTH=5
-BOOKING_MINUTES = 35
+BOOKING_MINUTES = 2
 currentPrice = 0
 
 class User(db.Model):
@@ -42,6 +42,16 @@ class Parking(db.Model):
         self.locationId = locationId
         self.locationName = locationName
         self.numSlots = numSlots
+
+
+class AvailableSlots(db.Model):
+    locationId = db.Column(db.Integer,  db.ForeignKey('parking.locationId'), primary_key=True)
+    timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow, primary_key=True)
+    numAvailableSlots = db.Column(db.Integer, primary_key=True)
+
+    def __init__(self, numAvailableSlots, locationId):
+        self.locationId = locationId
+        self.numAvailableSlots = numAvailableSlots
 
 class Slot(db.Model):
     slotId = db.Column(db.Integer, primary_key=True)
@@ -69,18 +79,18 @@ class Booking(db.Model):
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
     timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow, primary_key=True)
     code = db.Column(db.String(7))
-    availableSlots = db.Column(db.Integer)
+
     bookingStatus = db.Column(db.String(10), default="valid")
 
     def __init__(self, userId, locationId):
         self.userId = userId
         self.locationId = locationId
 
-    def __init__(self, userId, locationId, code, availableSlots):
+    def __init__(self, userId, locationId, code):
         self.userId = userId
         self.locationId = locationId
         self.code = code
-        self.availableSlots = availableSlots
+
 
 class Parked(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('user.userId'), primary_key=True)
@@ -175,15 +185,14 @@ def bookParkSlot():
             booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES*2)
             usedCodes = db.session.query(Booking).filter(Booking.locationId == body['locationId'], Booking.timestamp >= booking_minutes_ago).with_entities(Booking.code).all()
 
-            if (code, ) not in usedCodes :
+            if (code, ) not in usedCodes:
                 repeat = False
 
         availableSlots = db.session.query(Booking).filter(Booking.locationId == body['locationId']).order_by(Booking.timestamp.desc()).with_entities(Booking.availableSlots).first()
-        if (True): #availableSlots == None
+        if availableSlots == None:
             availableSlots = db.session.query(Parking).filter(Parking.locationId == body['locationId']).with_entities(Parking.numSlots).first()
-            print (availableSlots)
 
-        booking = Booking(body['userId'], body['locationId'], code, availableSlots)
+        booking = Booking(body['userId'], body['locationId'], code, availableSlots[0]-1)
         db.session.add(booking)
         db.session.commit()
 
@@ -210,7 +219,7 @@ def enter():
     db.session.add(booking)
     db.session.commit()
 
-    return jsonify({'successful': True, 'code': code}), '200 OK'
+    return jsonify({'successful': True}), '200 OK'
 
 @app.route('/exit', methods=['POST'])
 def exit():
@@ -224,10 +233,62 @@ def addSlotAvailability(user):
     db.session.commit()
     return "ok"
 
-def checkBooking():
-  threading.Timer(1.0, checkBooking).start()
-  availableSlots = db.session.query(Booking).filter(Booking.bookingStatus == 'valid').with_entities(Booking.availableSlots).first()
 
+@app.route('/parked', methods=['POST'])
+def parked():
+    content = request.get_json()
+    parked = Parked(content['userId'], content['locationId'], content['pricePerHour'])
+
+    db.session.add(parked)
+    db.session.commit()
+    return str('Parked OK')
+
+@app.route('/parking', methods=['POST'])
+def parking():
+    content = request.get_json()
+    parking = Parking(content['locationId'], content['locationName'], content['numSlots'])
+
+    db.session.add(parking)
+    db.session.commit()
+    return str('Parking OK')
+
+@app.route('/slot', methods=['POST'])
+def slot():
+    content = request.get_json()
+    slot = Slot(content['slotId'], content['slotSection'], content['isAvailable'])
+
+    db.session.add(slot)
+    db.session.commit()
+    return str('slot OK')
+
+@app.route('/slot_availability', methods=['POST'])
+def slot_availability():
+    content = request.get_json()
+    slot_availability = SlotAvailability(content['locationId'], content['slotId'], content['slotSection'])
+
+    db.session.add(slot_availability)
+    db.session.commit()
+    return str('slot_availability OK')
+
+@app.route('/user', methods=['POST'])
+def user():
+    content = request.get_json()
+    user = User(content['UserId'], content['type'], content['licensePlate'])
+
+    db.session.add(user)
+    db.session.commit()
+    return str('user OK')
+
+
+def checkBooking():
+    threading.Timer(1.0, checkBooking).start()
+    validBookings = db.session.query(Booking).filter(Booking.bookingStatus == 'valid').all()
+    for booking in validBookings:
+        now = datetime.fromisoformat(datetime.utcnow().isoformat())
+        booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES)
+        if booking.timestamp < booking_minutes_ago:
+            booking.bookingStatus = "expired"
+            db.session.commit()
 
 if __name__ == '__main__':
 
