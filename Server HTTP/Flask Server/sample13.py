@@ -175,15 +175,14 @@ def bookParkSlot():
             booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES*2)
             usedCodes = db.session.query(Booking).filter(Booking.locationId == body['locationId'], Booking.timestamp >= booking_minutes_ago).with_entities(Booking.code).all()
 
-            if (code, ) not in usedCodes :
+            if (code, ) not in usedCodes:
                 repeat = False
 
         availableSlots = db.session.query(Booking).filter(Booking.locationId == body['locationId']).order_by(Booking.timestamp.desc()).with_entities(Booking.availableSlots).first()
-        if (True): #availableSlots == None
+        if availableSlots == None:
             availableSlots = db.session.query(Parking).filter(Parking.locationId == body['locationId']).with_entities(Parking.numSlots).first()
-            print (availableSlots)
 
-        booking = Booking(body['userId'], body['locationId'], code, availableSlots)
+        booking = Booking(body['userId'], body['locationId'], code, availableSlots[0]-1)
         db.session.add(booking)
         db.session.commit()
 
