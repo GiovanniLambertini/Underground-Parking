@@ -271,9 +271,14 @@ def user():
 
 
 def checkBooking():
-  threading.Timer(1.0, checkBooking).start()
-  availableSlots = db.session.query(Booking).filter(Booking.bookingStatus == 'valid').with_entities(Booking.availableSlots).first()
-
+    threading.Timer(1.0, checkBooking).start()
+    validBookings = db.session.query(Booking).filter(Booking.bookingStatus == 'valid').all()
+    for booking in validBookings:
+        now = datetime.fromisoformat(datetime.utcnow().isoformat())
+        booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES)
+        if booking.timestamp < booking_minutes_ago:
+            booking.bookingStatus = "expired"
+            db.session.commit()
 
 if __name__ == '__main__':
 
