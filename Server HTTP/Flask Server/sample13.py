@@ -19,7 +19,7 @@ app.config.from_object(myconfig)
 db = SQLAlchemy(app)
 
 CODE_LENGTH=5
-BOOKING_MINUTES = 35
+BOOKING_MINUTES = 2
 currentPrice = 0
 
 class User(db.Model):
@@ -42,6 +42,16 @@ class Parking(db.Model):
         self.locationId = locationId
         self.locationName = locationName
         self.numSlots = numSlots
+
+
+class AvailableSlots(db.Model):
+    locationId = db.Column(db.Integer,  db.ForeignKey('parking.locationId'), primary_key=True)
+    timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow, primary_key=True)
+    numAvailableSlots = db.Column(db.Integer, primary_key=True)
+
+    def __init__(self, numAvailableSlots, locationId):
+        self.locationId = locationId
+        self.numAvailableSlots = numAvailableSlots
 
 class Slot(db.Model):
     slotId = db.Column(db.Integer, primary_key=True)
@@ -69,18 +79,18 @@ class Booking(db.Model):
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
     timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow, primary_key=True)
     code = db.Column(db.String(7))
-    availableSlots = db.Column(db.Integer)
+
     bookingStatus = db.Column(db.String(10), default="valid")
 
     def __init__(self, userId, locationId):
         self.userId = userId
         self.locationId = locationId
 
-    def __init__(self, userId, locationId, code, availableSlots):
+    def __init__(self, userId, locationId, code):
         self.userId = userId
         self.locationId = locationId
         self.code = code
-        self.availableSlots = availableSlots
+
 
 class Parked(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('user.userId'), primary_key=True)
