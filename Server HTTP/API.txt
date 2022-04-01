@@ -13,18 +13,20 @@ body risposta:
 /enter
 body:
 type:<carOrDevice>
+location:<locationId>
 if car:
     userId:<userId>
-    location:<locationId>
 if device:
     code: <accessCode>
-    location:<locationId>
 
 /exit
 body:
-userId:<userId>
 type:<carOrDevice>
 location:<locationId>
+if car:
+    userId:<userId>
+if device:
+    code: <accessCode>
 
 venv_dummy
 https://picuruldemierezilnic.com/flask

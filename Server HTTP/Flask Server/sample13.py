@@ -20,7 +20,11 @@ db = SQLAlchemy(app)
 
 CODE_LENGTH=5
 BOOKING_MINUTES = 2
-currentPrice = 0
+PRICE_TOPIC = "iot/underground_smart_parking/price/"
+SLOTS_TOPIC = "iot/underground_smart_parking/slots/"
+AVAILABLE_SLOTS_TOPIC = "iot/underground_smart_parking/available_slots/"
+
+currentPrice = []
 
 class User(db.Model):
     userId = db.Column(db.Integer, primary_key = True)
@@ -79,7 +83,6 @@ class Booking(db.Model):
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
     timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow, primary_key=True)
     code = db.Column(db.String(7))
-
     bookingStatus = db.Column(db.String(10), default="valid")
 
     def __init__(self, userId, locationId):
@@ -98,11 +101,13 @@ class Parked(db.Model):
     entranceTimestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)      #Entrance timestamp
     exitTimestamp = db.Column(db.DateTime(timezone=True), nullable=True)                                    #Exit timestamp
     pricePerHour = db.Column(db.Float)
+    code = db.Column(db.String(7))
 
-    def __init__(self, userId, locationId, pricePerHour):
+    def __init__(self, userId, locationId, pricePerHour, code):
         self.userId = userId
         self.locationId = locationId
         self.pricePerHour = pricePerHour
+        self.code = code
 
 class MQTTSubscriber():
 
@@ -116,23 +121,33 @@ class MQTTSubscriber():
         self.clientMQTT.loop_start()
 
 
-
     def on_connect(self, client, userdata, flags, rc):
         print("Connected with result code " + str(rc))
 
-        self.clientMQTT.subscribe(REQUEST_CODE_TOPIC)
+        self.clientMQTT.subscribe(PRICE_TOPIC)
+        self.clientMQTT.subscribe(SLOTS_TOPIC)
 
 
     def on_message(self, client, userdata, msg):
         print(msg.topic + " " + str(msg.payload))
-        if REQUEST_CODE_TOPIC in msg.topic:
-            #self.ser.write (msg.payload)
-            accessCode = random.randint(0, 99999)
-            self.clientMQTT.publish(CLIENT_ID, '{:d}'.format(accessCode))
-            self.bookedCodes.append(accessCode)
+        if PRICE_TOPIC in msg.topic:
+            locationId = msg.topic.replace(PRICE_TOPIC, "")
 
-        elif PRICE_TOPIC in msg.topc:
-            ...
+            global currentPrice
+            currentPrice[locationId] = float(msg.payload)
+
+        elif SLOTS_TOPIC in msg.topic:
+            slot = msg.topic.replace(SLOTS_TOPIC, "")
+            locationId, slotSection, slotId = slot.split("/")
+
+            if msg.payload == "1":
+                isAvailable = True
+            else:
+                isAvailable = False
+
+            slotAvailability = SlotAvailability(locationId, slotId, slotSection, isAvailable)
+            db.session.add(slotAvailability)
+            db.session.commit()
 
 
     def setup(self):
@@ -212,14 +227,17 @@ def enter():
     if body['type'] != 'car' and body['type'] != 'device':
         return jsonify( {'successful':False, 'error':'Type must be car or device'}), '400 Bad Request'
     if body['type'] == 'device':
-        booking = db.session.query(Booking).filter(Booking.code == body['code'], Booking.locationId == body['locationId'], Booking.timestamp >= booking_minutes_ago).order_by(Booking.timestamp.desc()).first()
+        booking = db.session.query(Booking).filter(Booking.code == body['code'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'valid', Booking.timestamp >= booking_minutes_ago).order_by(Booking.timestamp.desc()).first()
     else:
-        booking = db.session.query(Booking).filter(Booking.userId == body['userId'], Booking.locationId == body['locationId'], Booking.timestamp >= booking_minutes_ago).order_by(Booking.timestamp.desc()).first()
+        booking = db.session.query(Booking).filter(Booking.userId == body['userId'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'valid', Booking.timestamp >= booking_minutes_ago).order_by(Booking.timestamp.desc()).first()
 
     if booking == None:
-        return jsonify({'successful': False, 'error': 'Parking reservation not found'}), '401 Unauthorized'
+        return jsonify({'successful': False, 'error': 'No valid parking reservation found'}), '401 Unauthorized'
 
-    parked = Parked(booking.userId, booking.locationId, currentPrice)
+    booking.bookingStatus = 'used'
+    db.session.commit()
+
+    parked = Parked(booking.userId, booking.locationId, currentPrice, booking.code)
     db.session.add(parked)
     db.session.commit()
 
@@ -229,13 +247,30 @@ def enter():
 def exit():
     body = request.get_json()
 
+    if body['type'] != 'car' and body['type'] != 'device':
+        return jsonify({'successful': False, 'error': 'Type must be car or device'}), '400 Bad Request'
+    if body['type'] == 'device':
+        parked = db.session.query(Parked).filter(Parked.code == body['code'], Parked.locationId == body['locationId']).order_by(Booking.timestamp.desc()).first()
+    else:
+        parked = db.session.query(Parked).filter(Parked.userId == body['userId'],Parked.locationId == body['locationId']).order_by(Booking.timestamp.desc()).first()
+
+    if parked == None:
+        return jsonify({'successful': False, 'error': 'Parking ticket not found'}), '401 Unauthorized'
+
+    parked.exitTimestamp = datetime.utcnow()
+    db.session.commit()
+
+    #Calcolo il prezzo da pagare
+    total_hour = (datetime.fromisoformat(parked.exitTimestamp.isoformat()) - datetime.fromisoformat(parked.entranceTimestamp.isoformat())).total_seconds()/3600
+    totalPrice = parked.pricePerHour*total_hour
+
     previousAvailableSlots = db.session.query(AvailableSlots).filter(AvailableSlots.locationId == body['locationId']).order_by(AvailableSlots.timestamp.desc()).with_entities(AvailableSlots.numAvailableSlots).first()
-    if previousAvailableSlots == None:
-        previousAvailableSlots = db.session.query(Parking).filter(Parking.locationId == body['locationId']).with_entities(Parking.numSlots).first()
 
     availableSlots = AvailableSlots(previousAvailableSlots[0] + 1, body['locationId'])
     db.session.add(availableSlots)
     db.session.commit()
+
+    return jsonify({'successful': True, 'price': totalPrice}), '200 OK'
 
 
 @app.route('/add/<user>', methods=['POST'])
