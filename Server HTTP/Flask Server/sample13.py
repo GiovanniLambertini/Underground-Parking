@@ -6,6 +6,8 @@ from config import Config
 from flask import render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
+from backports.datetime_fromisoformat import MonkeyPatch
+MonkeyPatch.patch_fromisoformat()
 import random
 import paho.mqtt.client as mqtt
 import threading
@@ -21,7 +23,7 @@ db = SQLAlchemy(app)
 CODE_LENGTH=5
 BOOKING_MINUTES = 2
 PRICE_TOPIC = "iot/underground_smart_parking/price/"
-SLOTS_TOPIC = "iot/underground_smart_parking/slots/"
+SLOT_STATE_TOPIC = "iot/underground_smart_parking/slot_state/"
 AVAILABLE_SLOTS_TOPIC = "iot/underground_smart_parking/available_slots/"
 
 currentPrice = []
@@ -125,7 +127,7 @@ class MQTTSubscriber():
         print("Connected with result code " + str(rc))
 
         self.clientMQTT.subscribe(PRICE_TOPIC)
-        self.clientMQTT.subscribe(SLOTS_TOPIC)
+        self.clientMQTT.subscribe(SLOT_STATE_TOPIC)
 
 
     def on_message(self, client, userdata, msg):
@@ -136,8 +138,8 @@ class MQTTSubscriber():
             global currentPrice
             currentPrice[locationId] = float(msg.payload)
 
-        elif SLOTS_TOPIC in msg.topic:
-            slot = msg.topic.replace(SLOTS_TOPIC, "")
+        elif SLOT_STATE_TOPIC in msg.topic:
+            slot = msg.topic.replace(SLOT_STATE_TOPIC, "")
             locationId, slotSection, slotId = slot.split("/")
 
             if msg.payload == "1":
@@ -177,6 +179,9 @@ def prova():
 def bookParkSlot():
     body = request.get_json()
 
+    if not 'type' in body or not 'userId' in body or not 'locationId' in body:
+        return jsonify( {'successful':False, 'error':'Some mandatory fields are missing'}), '400 Bad Request'
+
     if body['type'] != 'car' and body['type'] != 'device':
         return jsonify( {'successful':False, 'error':'Type must be car or device'}), '400 Bad Request'
     if body['type'] == 'car':
@@ -195,7 +200,7 @@ def bookParkSlot():
                 code += str(random.randint(0,9))
             code += "#"
 
-            #Controllo che il codice non sia già stato assegnato
+            #Controllo che il codice non sia gia' stato assegnato
             now = datetime.fromisoformat(datetime.utcnow().isoformat())
             booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES*2)
             usedCodes = db.session.query(Booking).filter(Booking.locationId == body['locationId'], Booking.timestamp >= booking_minutes_ago).with_entities(Booking.code).all()
@@ -224,11 +229,20 @@ def enter():
     now = datetime.fromisoformat(datetime.utcnow().isoformat())
     booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES)
 
+    if not 'type' in body or not 'locationId' in body:
+        return jsonify( {'successful':False, 'error':'Some mandatory fields are missing'}), '400 Bad Request'
+
     if body['type'] != 'car' and body['type'] != 'device':
         return jsonify( {'successful':False, 'error':'Type must be car or device'}), '400 Bad Request'
     if body['type'] == 'device':
+        if not 'code' in body:
+            return jsonify({'successful': False, 'error': 'Some mandatory fields are missing'}), '400 Bad Request'
+
         booking = db.session.query(Booking).filter(Booking.code == body['code'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'valid', Booking.timestamp >= booking_minutes_ago).order_by(Booking.timestamp.desc()).first()
     else:
+        if not 'userId' in body:
+            return jsonify({'successful': False, 'error': 'Some mandatory fields are missing'}), '400 Bad Request'
+
         booking = db.session.query(Booking).filter(Booking.userId == body['userId'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'valid', Booking.timestamp >= booking_minutes_ago).order_by(Booking.timestamp.desc()).first()
 
     if booking == None:
@@ -247,9 +261,15 @@ def enter():
 def exit():
     body = request.get_json()
 
+    if not 'type' in body or not 'locationId' in body:
+        return jsonify( {'successful':False, 'error':'Some mandatory fields are missing'}), '400 Bad Request'
+
     if body['type'] != 'car' and body['type'] != 'device':
         return jsonify({'successful': False, 'error': 'Type must be car or device'}), '400 Bad Request'
     if body['type'] == 'device':
+        if not 'code' in body:
+            return jsonify({'successful': False, 'error': 'Some mandatory fields are missing'}), '400 Bad Request'
+
         parked = db.session.query(Parked).filter(Parked.code == body['code'], Parked.locationId == body['locationId']).order_by(Booking.timestamp.desc()).first()
     else:
         parked = db.session.query(Parked).filter(Parked.userId == body['userId'],Parked.locationId == body['locationId']).order_by(Booking.timestamp.desc()).first()
