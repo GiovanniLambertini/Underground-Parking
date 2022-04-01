@@ -1,15 +1,16 @@
 from datetime import datetime
 import time
+import dateutil
 
 a = datetime.utcnow
 time.sleep(1)
 b = datetime.utcnow
 
 a = datetime.utcnow()
-a = datetime.fromisoformat(a.isoformat())
+a = dateutil.parser.parse(a.isoformat())
 time.sleep(1)
 b = datetime.utcnow()
-b = datetime.fromisoformat(b.isoformat())
+b = dateutil.parser.parse(b.isoformat())
 
 print((b-a).total_seconds())
 

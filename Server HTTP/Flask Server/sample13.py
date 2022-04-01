@@ -6,8 +6,7 @@ from config import Config
 from flask import render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-from backports.datetime_fromisoformat import MonkeyPatch
-MonkeyPatch.patch_fromisoformat()
+import dateutil
 import random
 import paho.mqtt.client as mqtt
 import threading
@@ -201,7 +200,7 @@ def bookParkSlot():
             code += "#"
 
             #Controllo che il codice non sia gia' stato assegnato
-            now = datetime.fromisoformat(datetime.utcnow().isoformat())
+            now = dateutil.parser.parse(datetime.utcnow().isoformat())
             booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES*2)
             usedCodes = db.session.query(Booking).filter(Booking.locationId == body['locationId'], Booking.timestamp >= booking_minutes_ago).with_entities(Booking.code).all()
 
@@ -226,7 +225,7 @@ def bookParkSlot():
 @app.route('/enter', methods=['POST'])
 def enter():
     body = request.get_json()
-    now = datetime.fromisoformat(datetime.utcnow().isoformat())
+    now = dateutil.parser.parse(datetime.utcnow().isoformat())
     booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES)
 
     if not 'type' in body or not 'locationId' in body:
@@ -281,7 +280,7 @@ def exit():
     db.session.commit()
 
     #Calcolo il prezzo da pagare
-    total_hour = (datetime.fromisoformat(parked.exitTimestamp.isoformat()) - datetime.fromisoformat(parked.entranceTimestamp.isoformat())).total_seconds()/3600
+    total_hour = (dateutil.parser.parse(parked.exitTimestamp.isoformat()) - dateutil.parser.parse(parked.entranceTimestamp.isoformat())).total_seconds()/3600
     totalPrice = parked.pricePerHour*total_hour
 
     previousAvailableSlots = db.session.query(AvailableSlots).filter(AvailableSlots.locationId == body['locationId']).order_by(AvailableSlots.timestamp.desc()).with_entities(AvailableSlots.numAvailableSlots).first()
@@ -352,7 +351,7 @@ def checkBooking():
     threading.Timer(1.0, checkBooking).start()
     validBookings = db.session.query(Booking).filter(Booking.bookingStatus == 'valid').all()
     for booking in validBookings:
-        now = datetime.fromisoformat(datetime.utcnow().isoformat())
+        now = dateutil.parser.parse(datetime.utcnow().isoformat())
         booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES)
         if booking.timestamp < booking_minutes_ago:
             booking.bookingStatus = "expired"
