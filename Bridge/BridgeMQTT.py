@@ -46,8 +46,6 @@ class Bridge():
             except:
                 self.serial = None
 
-        # self.serial.open()
-
         # internal input buffer from serial
         self.inbuffer = []
 
