@@ -54,7 +54,7 @@ class Bridge():
         self.clientMQTT.on_connect = self.on_connect
         self.clientMQTT.on_message = self.on_message
         print("connecting...")
-        self.clientMQTT.connect("broker.emqx.io", 1883, 60)
+        self.clientMQTT.connect("broker.hivemq.com", 1883, 60)
 
         self.clientMQTT.loop_start()
 

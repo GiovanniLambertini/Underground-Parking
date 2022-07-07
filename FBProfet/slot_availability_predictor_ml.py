@@ -1,14 +1,45 @@
 import pandas as pd
 from fbprophet import Prophet
 import matplotlib.pyplot as plt
+import paho.mqtt.client as mqtt
 plt.style.use('fivethirtyeight')
+
+PRICE_TOPIC = "iot/underground_smart_parking/price/1"
+QOS = 2
 
 def fzwait():
     if False:
         return input("Press Enter to continue.")
     return ' '
 
+class MQTTServer():
+
+    def setupMQTT(self):
+        self.clientMQTT = mqtt.Client()
+        self.clientMQTT.on_connect = self.on_connect
+        self.clientMQTT.on_message = self.on_message
+        print("connecting mqtt...")
+        self.clientMQTT.connect("broker.hivemq.com", 1883, 60)
+
+        self.clientMQTT.loop_start()
+
+
+    def on_connect(self, client, userdata, flags, rc):
+        #self.clientMQTT.subscribe(PRICE_TOPIC)
+        print("Connected with mqtt broker with result code " + str(rc))
+
+    def on_message(self, client, userdata, msg):
+        print(msg.topic + " " + str(msg.payload))
+
+    def setup(self):
+        self.setupMQTT()
+
+
 if __name__ == "__main__":
+    mqttServer = MQTTServer()
+    mqttServer.setup()
+
+    mqttServer.clientMQTT.publish(PRICE_TOPIC, '{:f}'.format(2.2), qos=QOS, retain=True)
 
     # 1. lettura dati
     df = pd.read_csv('slot_availability.csv')
@@ -56,3 +87,4 @@ if __name__ == "__main__":
     plt3 = my_model.plot_components(forecast)
     plt3.show()
     fzwait()
+

@@ -32,14 +32,14 @@ public class MainActivity extends AppCompatActivity  {
 
     //CONSUMER MQTT
     //IP Address of the target MQTT Broker
-    public static final String BROKER_ADDRESS = "broker.emqx.io";
+    public static final String BROKER_ADDRESS = "broker.hivemq.com";
 
     //PORT of the target MQTT Broker
     public static final int BROKER_PORT = 1883;
 
     //PRODUCER MQTT
     //BROKER URL
-    public static final String BROKER_URL = "tcp://broker.emqx.io:1883";
+    public static final String BROKER_URL = "tcp://broker.hivemq.com:1883";
 
     //Message Limit generated and sent by the producer
     public static final int MESSAGE_COUNT = 10;

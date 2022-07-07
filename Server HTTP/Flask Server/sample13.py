@@ -118,7 +118,7 @@ class MQTTServer():
         self.clientMQTT.on_connect = self.on_connect
         self.clientMQTT.on_message = self.on_message
         print("connecting mqtt...")
-        self.clientMQTT.connect("broker.emqx.io", 1883, 60)
+        self.clientMQTT.connect("broker.hivemq.com", 1883, 60)
 
         self.clientMQTT.loop_start()
 
@@ -261,7 +261,7 @@ def enter():
     booking.bookingStatus = 'using'
     db.session.commit()
 
-    parked = Parked(booking.userId, booking.locationId, currentPrice[body['locationId']], booking.code)
+    parked = Parked(booking.userId, booking.locationId, currentPrice[int(body['locationId'])], booking.code)
     db.session.add(parked)
     db.session.commit()
 
@@ -281,9 +281,9 @@ def exit():
             return jsonify({'successful': False, 'error': 'Some mandatory fields are missing'}), '400 Bad Request'
 
         booking = db.session.query(Booking).filter(Booking.code == body['code'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'using').order_by(Booking.timestamp.desc()).first()
-        parked = db.session.query(Parked).filter(Parked.code == body['code'], Parked.locationId == body['locationId']).order_by(Booking.timestamp.desc()).first()
+        parked = db.session.query(Parked).filter(Parked.code == body['code'], Parked.locationId == body['locationId']).order_by(Parked.timestamp.desc()).first()
     else:
-        parked = db.session.query(Parked).filter(Parked.userId == body['userId'],Parked.locationId == body['locationId']).order_by(Booking.timestamp.desc()).first()
+        parked = db.session.query(Parked).filter(Parked.userId == body['userId'],Parked.locationId == body['locationId']).order_by(Parked.timestamp.desc()).first()
         booking = db.session.query(Booking).filter(Booking.userId == body['userId'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'using',).order_by(Booking.timestamp.desc()).first()
 
     booking.bookingStatus = 'used'
