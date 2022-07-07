@@ -1,0 +1,17 @@
+Arduino to Bridge:
+1)Codice:
+    - 1 byte tipo:0
+    - 5 byte codice numerico: xxxxx
+2)Aggiornamento stato slot:
+    - 1 byte tipo:1
+    - 1 byte sezione: x
+    - 1 byte idSlot: x
+    - 1 byte stato: 0 o 1
+
+Bridge to Arduino:
+1) Esito codice:
+    - 1 byte tipo:0
+    - 1 byte esito: 0 o 1
+2) Aggiornamento posti disponibili:
+    -1 byte tipo:1
+    -1 byte numPosti: x

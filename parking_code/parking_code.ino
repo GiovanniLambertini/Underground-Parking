@@ -45,24 +45,21 @@
 #define BARRIER_ACTIVE 2
 //#define BARRIER_SENSOR2_ACTIVE 2
 #define FINAL_STATE 3
+#define SEC_LED_RGB 10
 
 Servo servo;
 int angle = 0;
 int slots[NUM_SLOTS]={PARK1, PARK2, PARK3, PARK4, PARK5, PARK6};
-bool slotsState[NUM_SLOTS];                                                                     //Occupato - false, Libero - true
-int segments[DISPLAY_SEGMENTS] {LED_A, LED_B, LED_C, LED_D, LED_E, LED_F, LED_G, LED_DP};       //Pin display 7 segmenti
+bool slotsState[NUM_SLOTS];                                                                     // Occupato - false, Libero - true
+int segments[DISPLAY_SEGMENTS] {LED_A, LED_B, LED_C, LED_D, LED_E, LED_F, LED_G, LED_DP};       // Pin display 7 segmenti
 volatile int state;
 int available_parks;
-int bluetoothData;
+byte bluetoothData;
 char buttonCode[CODE_LENGTH];
-int buttonState;                                                                                 //0: stato iniziale, 1: *, 2:*X, 3:*XX, 4:*XXX, 5:*XXXX, 6:*XXXXX, 7:*XXXXX#
-int bluetoothState;                                                                              //0: stato iniziale, 1: ricevuto 0xff, 2:
-
-/*
- 1) Solo aggiornamento posti
-2) Aggiornamneto posti con entrata
-3) Aggiornamento posti con uscita
- */
+int buttonState;                                                                                 // 0: stato iniziale, 1: *, 2:*X, 3:*XX, 4:*XXX, 5:*XXXX, 6:*XXXXX, 7:*XXXXX#
+int bluetoothState;                                                                              // -1: stato iniziale (attesa dato), 0: attesa tipo del pacchetto, 1: attesa pacchetto di tipo 0, 2: attesa pacchetto di tipo 1, 3: attesa terminatore di pacchetto
+int barrierState;                                                                                // -1: barrierClosed, 0: carEnter, 1: carExit
+unsigned long millisLedRgb;
 
 // Matrice bottoni
 char buttonMatrix[ROWS][COLS] = {
@@ -97,6 +94,7 @@ void setup() {
   buttonState=0;
   bluetoothData=-1;
   available_parks=0;
+  millisLedRgb=0;
   
   pinMode(BARRIER_MOTOR, OUTPUT); 
   pinMode(BARRIER_SENSOR1, INPUT); 
@@ -133,70 +131,94 @@ void setup() {
   servo.attach(BARRIER_MOTOR);
   servo.write(angle);
 
-  attachInterrupt(digitalPinToInterrupt(BARRIER_SENSOR1), checkBarrierSensor1, FALLING );    
-  attachInterrupt(digitalPinToInterrupt(BARRIER_SENSOR2), checkBarrierSensor2, FALLING );   
+  attachInterrupt(digitalPinToInterrupt(BARRIER_SENSOR1), checkBarrierSensor1, RISING );    
+  attachInterrupt(digitalPinToInterrupt(BARRIER_SENSOR2), checkBarrierSensor2, RISING );   
 }
 
 void loop() {
   
-  char button = customKeypad.getKey();        // Leggo il bottone premuto
+  char button = customKeypad.getKey();                     // Leggo il bottone premuto
 
-  if (button) {                               //Se è stato premuto un bottone
+  if (button) {                                            //Se è stato premuto un bottone
     Serial.println(button);
-    if (button == INITIAL_CHAR)
-      buttonState=1;
-    else if (buttonState == CODE_LENGTH-1){
+     buttonCode[buttonState]=button;
+    if (button == INITIAL_CHAR){                           //Carattere *, resetto lo stato
+      buttonState++;
+    }
+    else if (buttonState>=1 && buttonState<CODE_LENGTH-1){              //Nuova cifra, aggiorno lo stato
+      buttonState++;
+    }
+    else if (buttonState == CODE_LENGTH-1){   
       if (button == FINAL_CHAR){
-         buttonCode[buttonState]=button;
-
          //Invia il pacchetto dati con il codice inserito
          Serial1.write(0xff);
-         Serial1.write((char) CODE_LENGTH);
+         Serial1.write(0x00);                            //Tipo pacchetto 0
          for (int i=0; i<CODE_LENGTH; i++)
            Serial1.write(buttonCode[i]);                 //Numero dello slot
-         Serial1.write(0xfe);         
+         Serial1.write(0xfe);       
+         Serial.println (buttonCode[1]);
       }
       buttonState=0;
-    }
-    else if (buttonState>=1){
-      buttonCode[buttonState]=button;
-      buttonState++;
     }
   }
 
   if (Serial1.available()>0){
     bluetoothData = Serial1.read();
-    Serial.print(bluetoothData);
+    Serial.println(bluetoothData);
 
-    bluetoothData = bluetoothData%3;
+    switch (bluetoothState){
+      case -1:            
+        if (bluetoothData==0xff)
+            bluetoothState=0;
+        break;
 
-    switch (bluetoothData){
-      case 0:                                               //Prenotazione - Solo diminuzione posto
-        led_RGB(255, 0, 0); // Red
-        servo.write(90);               
-        delay(3000);
-        servo.write(10);    
+      case 0:
+        if (bluetoothData==0x00)
+          bluetoothState=0;
+        else if (bluetoothData==0x01)
+          bluetoothState=1;          
+        
         break;
-  
-      case 1:                                               //Prenotazione - Solo alzata sbarra
-        led_RGB(0, 255, 0); //Green
-        servo.write(90);               
-        delay(3000);
-        servo.write(10);   
+        
+      case 1: 
+        if (bluetoothData==0){                                
+            led_RGB(255, 0, 0); // Led Red, Error 
+            millisLedRgb = millis();
+        }
+        else if (bluetoothData==1){  
+            led_RGB(0, 255, 0); // Led Green, open barrier
+            millisLedRgb = millis();
+
+            servo.write(90);               
+            delay(3000);
+            servo.write(10);  
+        }
+
+        bluetoothState=3;   
         break;
-  
-      case 2:                                               //Senza prenotazione - Diminuzione posto e alzata sbarra
-        led_RGB(255, 150, 0); //Orange
-        servo.write(90);               
-        delay(3000);
-        servo.write(10);   
+
+      case 2:
+        available_parks = bluetoothData;
+        display_number(available_parks);
+
+        bluetoothState=3;  
         break;
-  
+        
+      case 3:
+        if (bluetoothData==0xfe)
+            bluetoothState=-1;
+        break;
+          
       default:                                              //Se non ho dati sulla seriale
         break;
     }
   }
-  
+
+  if (millisLedRgb !=0 && (millis()-millisLedRgb) >= SEC_LED_RGB*1000){
+      Serial.println (millisLedRgb-millis());
+      led_RGB(0, 0, 0);
+      millisLedRgb=0;
+  }
 
   /*
   
@@ -235,12 +257,14 @@ void display_number(int num) {                //Stampa un numero sul display 7 s
     digitalWrite(segments[i], displayNumber[num][i]);
   }
 
+  /*  
   if (num == 0)
     led_RGB(255, 0, 0);           //Led rosso (0 posti)
   else if (num <= 2)
     led_RGB(255,165,0);           //Led arancione (1 o 2 posti)
   else
     led_RGB(0, 255, 0);           //Led verde (più di 2 posti)
+   */
 }
 
 void checkSlot(int i){
@@ -250,8 +274,9 @@ void checkSlot(int i){
     
     //Invia il pacchetto dati con l'aggiornamento dello stato del posto
     Serial1.write(0xff);
-    Serial1.write(0x02);
-    Serial1.write((char) i+1);                 //Numero dello slot
+    Serial1.write(0x01);                       //Pacchetto tipo 1
+    Serial1.write((char) 'A');                 //Sezione dello slot
+    Serial1.write((char) i+1);                 //Id dello slot
     Serial1.write((char) slotsState[i]);       //1 - Libero, 0 - Occupato
     Serial1.write(0xfe);
 

@@ -2,9 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="658895ee-236b-4f91-ad93-3d12bf5839bb" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/messaggi.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/Underground Smart Parking.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/Underground Smart Parking.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Bridge.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Bridge.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Server HTTP/Flask Server/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/../Server HTTP/Flask Server/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BridgeMQTT.py" beforeDir="false" afterPath="$PROJECT_DIR$/BridgeMQTT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Server HTTP/Flask Server/example.sqlite" beforeDir="false" afterPath="$PROJECT_DIR$/../Server HTTP/Flask Server/example.sqlite" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Server HTTP/Flask Server/sample13.py" beforeDir="false" afterPath="$PROJECT_DIR$/../Server HTTP/Flask Server/sample13.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../parking_code/parking_code.ino" beforeDir="false" afterPath="$PROJECT_DIR$/../parking_code/parking_code.ino" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,7 +36,7 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../Server HTTP" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
-  <component name="RunManager" selected="Python.sample13">
+  <component name="RunManager" selected="Python.BridgeMQTT">
     <configuration name="BridgeMQTT" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Bridge" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -81,7 +88,7 @@
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="" />
+      <option name="SDK_HOME" value="C:\Anaconda\python.exe" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../Server HTTP/Flask Server" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -96,11 +103,16 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.BridgeMQTT" />
+      <item itemvalue="Python.config" />
+      <item itemvalue="Python.sample13" />
+    </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.BridgeMQTT" />
         <item itemvalue="Python.sample13" />
         <item itemvalue="Python.config" />
-        <item itemvalue="Python.BridgeMQTT" />
       </list>
     </recent_temporary>
   </component>
@@ -120,6 +132,8 @@
       <workItem from="1643811010748" duration="8970000" />
       <workItem from="1643883089655" duration="25258000" />
       <workItem from="1643990352011" duration="252000" />
+      <workItem from="1656606975690" duration="2152000" />
+      <workItem from="1656940861771" duration="170000" />
     </task>
     <servers />
   </component>
@@ -127,41 +141,42 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="223" y="63" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1643896921255">
+    <state x="496" y="23" key="#BridgeMQTT" timestamp="1656607040506">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state x="223" y="63" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.816@0.0.1536.816" timestamp="1643896921255" />
-    <state x="549" y="163" key="FileChooserDialogImpl" timestamp="1643990524785">
+    <state x="496" y="23" key="#BridgeMQTT/0.0.1536.816@0.0.1536.816" timestamp="1656607040506" />
+    <state x="296" y="63" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1656607215435">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state x="549" y="163" key="FileChooserDialogImpl/0.0.1536.816@0.0.1536.816" timestamp="1643990524785" />
-    <state width="1493" height="118" key="GridCell.Tab.0.bottom" timestamp="1643934941674">
+    <state x="296" y="63" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.816@0.0.1536.816" timestamp="1656607215435" />
+    <state width="1493" height="123" key="GridCell.Tab.0.bottom" timestamp="1656624740695">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="118" key="GridCell.Tab.0.bottom/0.0.1536.816@0.0.1536.816" timestamp="1643934941674" />
-    <state width="1493" height="118" key="GridCell.Tab.0.center" timestamp="1643934941674">
+    <state width="1493" height="123" key="GridCell.Tab.0.bottom/0.0.1536.816@0.0.1536.816" timestamp="1656624740695" />
+    <state width="1493" height="123" key="GridCell.Tab.0.center" timestamp="1656624740695">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="118" key="GridCell.Tab.0.center/0.0.1536.816@0.0.1536.816" timestamp="1643934941674" />
-    <state width="1493" height="118" key="GridCell.Tab.0.left" timestamp="1643934941674">
+    <state width="1493" height="123" key="GridCell.Tab.0.center/0.0.1536.816@0.0.1536.816" timestamp="1656624740695" />
+    <state width="1493" height="123" key="GridCell.Tab.0.left" timestamp="1656624740695">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="118" key="GridCell.Tab.0.left/0.0.1536.816@0.0.1536.816" timestamp="1643934941674" />
-    <state width="1493" height="118" key="GridCell.Tab.0.right" timestamp="1643934941674">
+    <state width="1493" height="123" key="GridCell.Tab.0.left/0.0.1536.816@0.0.1536.816" timestamp="1656624740695" />
+    <state width="1493" height="123" key="GridCell.Tab.0.right" timestamp="1656624740695">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1493" height="118" key="GridCell.Tab.0.right/0.0.1536.816@0.0.1536.816" timestamp="1643934941674" />
-    <state x="277" y="51" key="SettingsEditor" timestamp="1643213823530">
+    <state width="1493" height="123" key="GridCell.Tab.0.right/0.0.1536.816@0.0.1536.816" timestamp="1656624740695" />
+    <state x="277" y="51" key="SettingsEditor" timestamp="1656607062098">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state x="277" y="51" key="SettingsEditor/0.0.1536.816@0.0.1536.816" timestamp="1643213823530" />
-    <state x="465" y="232" key="com.intellij.ide.util.TipDialog" timestamp="1643990351061">
+    <state x="277" y="51" key="SettingsEditor/0.0.1536.816@0.0.1536.816" timestamp="1656607062098" />
+    <state x="465" y="232" key="com.intellij.ide.util.TipDialog" timestamp="1656940996886">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state x="465" y="232" key="com.intellij.ide.util.TipDialog/0.0.1536.816@0.0.1536.816" timestamp="1643990351061" />
+    <state x="465" y="232" key="com.intellij.ide.util.TipDialog/0.0.1536.816/1920.0.1280.672@0.0.1536.816" timestamp="1656940996886" />
+    <state x="465" y="232" key="com.intellij.ide.util.TipDialog/0.0.1536.816@0.0.1536.816" timestamp="1656606975890" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Bridge$BridgeMQTT.coverage" NAME="BridgeMQTT Coverage Results" MODIFIED="1643217453967" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Bridge$BridgeMQTT.coverage" NAME="BridgeMQTT Coverage Results" MODIFIED="1656607255691" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Bridge$sample13.coverage" NAME="sample13 Coverage Results" MODIFIED="1643933416430" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../Server HTTP/Flask Server" />
     <SUITE FILE_PATH="coverage/Bridge$config.coverage" NAME="config Coverage Results" MODIFIED="1643905601518" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../Server HTTP/Flask Server" />
   </component>
