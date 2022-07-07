@@ -16,6 +16,7 @@ QOS = 2
 BASE_TOPIC = 'iot/underground_smart_parking/'
 AVAILABLE_SLOTS_TOPIC = BASE_TOPIC + 'available_slots/' + str(LOCATION_ID)
 SLOT_STATE_TOPIC = BASE_TOPIC + 'slot_state/' + str(LOCATION_ID) + "/"             #iot/underground_smart_parking/slot_state/<locationID>/<Section>/<SlotID>
+BARRIER_OPENING = BASE_TOPIC + 'barrier/'
 API_CODE = 'http://127.0.0.1/checkcode'
 
 INITIAL_CHAR = '*'
@@ -38,11 +39,12 @@ class Bridge():
                 self.portname = port.device
         print ("connecting to " + self.portname)
 
-        try:
-            if self.portname is not None:
-                self.serial = serial.Serial(self.portname, 9600, timeout=0)
-        except:
-            self.serial = None
+        while self.serial == None:
+            try:
+                if self.portname is not None:
+                    self.serial = serial.Serial(self.portname, 9600, timeout=0)
+            except:
+                self.serial = None
 
         # self.serial.open()
 
@@ -63,22 +65,51 @@ class Bridge():
         print("Connected with result code " + str(rc))
 
         self.clientMQTT.subscribe(AVAILABLE_SLOTS_TOPIC)
+        self.clientMQTT.subscribe(BARRIER_OPENING + "#")
 
 
     def on_message(self, client, userdata, msg):
-        print(msg.topic + " " + str(msg.payload))
+        print(msg.topic + " " + msg.payload.decode("utf-8"))
         if AVAILABLE_SLOTS_TOPIC in msg.topic:
-            response = []
-            response.append(b'\xff')
-            response.append(b'\x00')
-            response.append(msg.payload.to_bytes(1, 'little'))
-            response.append(b'\xfe')
-            self.serial.write (response)
+            availableSlots = int(msg.payload.decode("utf-8"))
+
+            response = bytearray(b'\xff')
+            response += (b'\x01')  # Pacchetto di tipo 1
+            response += availableSlots.to_bytes(1, 'little')
+            response += (b'\xfe')
+            print (response)
+            self.serial.write(response)
+
+        if BARRIER_OPENING in msg.topic:
+            if "1" in str(msg.payload):
+                print("Authorized user, sending command to open barrier")
+
+                response = bytearray(b'\xff')
+                response += (b'\x00')  # Pacchetto di tipo 0
+
+                if "enter" in msg.topic:
+                    response += (b'\x01')  # 1 - Successo entrata
+                else:
+                    response += (b'\x02')  # 2 - Successo uscita
+
+                response += (b'\xfe')
+
+                self.serial.write(response)
+
+            else:
+                print("Error, user unauthorized or bad request")
+
+                response = bytearray(b'\xff')
+                response += (b'\x00')  # Pacchetto di tipo 0
+                response += (b'\x00')  # Errore
+                response += (b'\xfe')
+
+                self.serial.write(response)
 
 
     def setup(self):
         self.setupSerial()
-        #self.setupMQTT()
+        self.setupMQTT()
 
     def loop(self):
         # Ciclo infinito per lettura dei dati che arrivano dai sensori, tramite bluetooth
@@ -94,8 +125,6 @@ class Bridge():
                         self.inbuffer = []
                     else:
                         self.inbuffer.append(lastchar)          # Aggiungo il dato al buffer
-
-                    print(self.inbuffer)
 
     def useData(self):
         # Ho ricevuto un pacchetto intero dalla porta seriale
@@ -114,35 +143,21 @@ class Bridge():
 
             print(code)
 
-            response = requests.post(API_CODE, json={"type":"device", "locationId": str(LOCATION_ID), "code" : code})
-            if response.status_code == 200:
-                print("successfully received response")
-                print(response.json())
+            body = requests.post(API_CODE, json={"type":"device", "locationId": str(LOCATION_ID), "code" : code})
 
-                response = []
-                response.append(b'\xff')
-                response.append(b'\x01')            #Pacchetto di tipo 0
-                response.append(b'\x01')            #Successo
-                response.append(b'\xfe')
-                self.serial.write(response)
+            if body.status_code == 200:
+                print("successfully received response")
+                print(body.json())
 
             else:
-                print("Error " + str(response.status_code))
-
-                response = bytearray(b'\xff')
-                response += (b'\x01')  # Pacchetto di tipo 0
-                response += (b'\x00')  # Errore
-                response += (b'\xfe')
-
-                self.serial.write(response)
+                print("Error " + str(body.status_code))
 
         elif self.inbuffer[1] == b'\x01':
-
             section = self.inbuffer[2]
             slotId = int.from_bytes(self.inbuffer[3], byteorder='little')
             value = int.from_bytes(self.inbuffer[4], byteorder='little')                                # 0 libero, 1 occupato
-            self.clientMQTT.publish(SLOT_STATE_TOPIC + section + '/' + str(slotId), '{:d}'.format(value), qos=QOS)
-
+            print(SLOT_STATE_TOPIC + str(section) + '/' + str(slotId))
+            self.clientMQTT.publish(SLOT_STATE_TOPIC + str(section) + '/' + str(slotId), '{:d}'.format(value), qos=QOS)
 
 if __name__ == '__main__':
     br=Bridge()

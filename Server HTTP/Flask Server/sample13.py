@@ -21,12 +21,14 @@ db = SQLAlchemy(app)
 
 CODE_LENGTH=5
 BOOKING_MINUTES = 60
-PRICE_TOPIC = "iot/underground_smart_parking/price/"
-SLOT_STATE_TOPIC = "iot/underground_smart_parking/slot_state/"
-AVAILABLE_SLOTS_TOPIC = "iot/underground_smart_parking/available_slots/"
+BASE_TOPIC = "iot/underground_smart_parking/"
+PRICE_TOPIC = BASE_TOPIC + "price/"
+SLOT_STATE_TOPIC = BASE_TOPIC + "slot_state/"
+AVAILABLE_SLOTS_TOPIC = BASE_TOPIC + "available_slots/"
+BARRIER_OPENING = BASE_TOPIC + 'barrier/'
 QOS = 2
 
-currentPrice = []
+currentPrice = {}
 
 class User(db.Model):
     userId = db.Column(db.Integer, primary_key = True)
@@ -100,8 +102,8 @@ class Booking(db.Model):
 class Parked(db.Model):
     userId = db.Column(db.Integer, db.ForeignKey('user.userId'), primary_key=True)
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
-    entranceTimestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)      #Entrance timestamp
-    exitTimestamp = db.Column(db.DateTime(timezone=True), nullable=True)                                    #Exit timestamp
+    entranceTimestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow, primary_key=True)
+    exitTimestamp = db.Column(db.DateTime(timezone=True), nullable=True)
     pricePerHour = db.Column(db.Float)
     code = db.Column(db.String(7))
 
@@ -126,14 +128,14 @@ class MQTTServer():
     def on_connect(self, client, userdata, flags, rc):
         print("Connected with result code " + str(rc))
 
-        self.clientMQTT.subscribe(PRICE_TOPIC)
+        self.clientMQTT.subscribe(PRICE_TOPIC+"#")
         self.clientMQTT.subscribe(SLOT_STATE_TOPIC)
 
 
     def on_message(self, client, userdata, msg):
-        print(msg.topic + " " + str(msg.payload))
+        #print(msg.topic + " " + str(msg.payload))
         if PRICE_TOPIC in msg.topic:
-            locationId = msg.topic.replace(PRICE_TOPIC, "")
+            locationId = int(msg.topic.replace(PRICE_TOPIC, ""))
 
             global currentPrice
             currentPrice[locationId] = float(msg.payload)
@@ -206,9 +208,9 @@ def bookParkSlot():
             if (code, ) not in usedCodes:
                 repeat = False
 
-        previousAvailableSlots = db.session.query(AvailableSlots).filter(AvailableSlots.locationId == body['locationId']).order_by(AvailableSlots.timestamp.desc()).with_entities(AvailableSlots.numAvailableSlots).first()
-        if previousAvailableSlots == None:
-            previousAvailableSlots = db.session.query(Parking).filter(Parking.locationId == body['locationId']).with_entities(Parking.numSlots).first()
+    previousAvailableSlots = db.session.query(AvailableSlots).filter(AvailableSlots.locationId == body['locationId']).order_by(AvailableSlots.timestamp.desc()).with_entities(AvailableSlots.numAvailableSlots).first()
+    if previousAvailableSlots == None:
+        previousAvailableSlots = db.session.query(Parking).filter(Parking.locationId == body['locationId']).with_entities(Parking.numSlots).first()
 
     if previousAvailableSlots == None:                                  #Prima prenotazione
         previousAvailableSlots = 6
@@ -228,7 +230,7 @@ def bookParkSlot():
     db.session.add(availableSlots)
     db.session.commit()
 
-    mqttServer.clientMQTT.publish(AVAILABLE_SLOTS_TOPIC + str(body['locationId']), '{:d}'.format(newAvailableSlots), qos=QOS, retain=True)
+    mqttServer.clientMQTT.publish(AVAILABLE_SLOTS_TOPIC + str(body['locationId']), str(newAvailableSlots), qos=QOS, retain=True)
 
     return jsonify({'successful': True, 'code': code}), '200 OK'
 
@@ -240,22 +242,27 @@ def enter():
     booking_minutes_ago = now - timedelta(minutes=BOOKING_MINUTES)
 
     if not 'type' in body or not 'locationId' in body:
+        mqttServer.clientMQTT.publish(BARRIER_OPENING + 'enter', '0', qos=QOS)
         return jsonify( {'successful':False, 'error':'Some mandatory fields are missing'}), '400 Bad Request'
 
     if body['type'] != 'car' and body['type'] != 'device':
+        mqttServer.clientMQTT.publish(BARRIER_OPENING + 'enter', '0', qos=QOS)
         return jsonify( {'successful':False, 'error':'Type must be car or device'}), '400 Bad Request'
     if body['type'] == 'device':
         if not 'code' in body:
+            mqttServer.clientMQTT.publish(BARRIER_OPENING + 'enter', '0', qos=QOS)
             return jsonify({'successful': False, 'error': 'Some mandatory fields are missing'}), '400 Bad Request'
 
         booking = db.session.query(Booking).filter(Booking.code == body['code'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'valid', Booking.timestamp >= booking_minutes_ago).order_by(Booking.timestamp.desc()).first()
     else:
         if not 'userId' in body:
+            mqttServer.clientMQTT.publish(BARRIER_OPENING + 'enter', '0', qos=QOS)
             return jsonify({'successful': False, 'error': 'Some mandatory fields are missing'}), '400 Bad Request'
 
         booking = db.session.query(Booking).filter(Booking.userId == body['userId'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'valid', Booking.timestamp >= booking_minutes_ago).order_by(Booking.timestamp.desc()).first()
 
     if booking == None:
+        mqttServer.clientMQTT.publish(BARRIER_OPENING + 'enter', '0', qos=QOS)
         return jsonify({'successful': False, 'error': 'No valid parking reservation found'}), '401 Unauthorized'
 
     booking.bookingStatus = 'using'
@@ -265,6 +272,7 @@ def enter():
     db.session.add(parked)
     db.session.commit()
 
+    mqttServer.clientMQTT.publish(BARRIER_OPENING + 'enter', '1', qos=QOS)
     return jsonify({'successful': True}), '200 OK'
 
 @app.route('/exit', methods=['POST'])
@@ -272,24 +280,28 @@ def exit():
     body = request.get_json()
 
     if not 'type' in body or not 'locationId' in body:
+        mqttServer.clientMQTT.publish(BARRIER_OPENING + 'exit', '0', qos=QOS)
         return jsonify( {'successful':False, 'error':'Some mandatory fields are missing'}), '400 Bad Request'
 
     if body['type'] != 'car' and body['type'] != 'device':
+        mqttServer.clientMQTT.publish(BARRIER_OPENING + 'exit', '0', qos=QOS)
         return jsonify({'successful': False, 'error': 'Type must be car or device'}), '400 Bad Request'
     if body['type'] == 'device':
         if not 'code' in body:
+            mqttServer.clientMQTT.publish(BARRIER_OPENING + 'exit', '0', qos=QOS)
             return jsonify({'successful': False, 'error': 'Some mandatory fields are missing'}), '400 Bad Request'
 
         booking = db.session.query(Booking).filter(Booking.code == body['code'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'using').order_by(Booking.timestamp.desc()).first()
-        parked = db.session.query(Parked).filter(Parked.code == body['code'], Parked.locationId == body['locationId']).order_by(Parked.timestamp.desc()).first()
+        parked = db.session.query(Parked).filter(Parked.code == body['code'], Parked.locationId == body['locationId']).order_by(Parked.entranceTimestamp.desc()).first()
     else:
-        parked = db.session.query(Parked).filter(Parked.userId == body['userId'],Parked.locationId == body['locationId']).order_by(Parked.timestamp.desc()).first()
+        parked = db.session.query(Parked).filter(Parked.userId == body['userId'],Parked.locationId == body['locationId']).order_by(Parked.entranceTimestamp.desc()).first()
         booking = db.session.query(Booking).filter(Booking.userId == body['userId'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'using',).order_by(Booking.timestamp.desc()).first()
 
     booking.bookingStatus = 'used'
     db.session.commit()
 
     if parked == None:
+        mqttServer.clientMQTT.publish(BARRIER_OPENING + 'exit', '0', qos=QOS)
         return jsonify({'successful': False, 'error': 'Parking ticket not found'}), '401 Unauthorized'
 
     parked.exitTimestamp = datetime.utcnow()
@@ -306,7 +318,8 @@ def exit():
     db.session.add(availableSlots)
     db.session.commit()
 
-    mqttServer.clientMQTT.publish(AVAILABLE_SLOTS_TOPIC + body['locationId'], '{:d}'.format(newAvailableSlots), qos=QOS, retain=True)
+    mqttServer.clientMQTT.publish(AVAILABLE_SLOTS_TOPIC + body['locationId'], str(newAvailableSlots), qos=QOS, retain=True)
+    mqttServer.clientMQTT.publish(BARRIER_OPENING + 'exit', '1', qos=QOS)
 
     return jsonify({'successful': True, 'price': totalPrice}), '200 OK'
 
@@ -318,7 +331,6 @@ def checkCode():
     if booking != None:
         return exit()
 
-    print ("ok")
     return enter()
 
 @app.route('/add/<user>', methods=['POST'])
@@ -396,7 +408,7 @@ def checkBooking():
             db.session.add(availableSlots)
             db.session.commit()
 
-            mqttServer.clientMQTT.publish(AVAILABLE_SLOTS_TOPIC + str(booking.locationId), '{:d}'.format(newAvailableSlots), qos=QOS, retain=True)
+            mqttServer.clientMQTT.publish(AVAILABLE_SLOTS_TOPIC + str(booking.locationId), str(newAvailableSlots), qos=QOS, retain=True)
 
 
 if __name__ == '__main__':

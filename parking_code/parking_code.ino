@@ -45,21 +45,24 @@
 #define BARRIER_ACTIVE 2
 //#define BARRIER_SENSOR2_ACTIVE 2
 #define FINAL_STATE 3
-#define SEC_LED_RGB 10
+#define SEC_LED_RGB 5
+#define SEC_BARRIER 1
 
 Servo servo;
-int angle = 0;
+int angle = 10;
 int slots[NUM_SLOTS]={PARK1, PARK2, PARK3, PARK4, PARK5, PARK6};
 bool slotsState[NUM_SLOTS];                                                                     // Occupato - false, Libero - true
 int segments[DISPLAY_SEGMENTS] {LED_A, LED_B, LED_C, LED_D, LED_E, LED_F, LED_G, LED_DP};       // Pin display 7 segmenti
 volatile int state;
-int available_parks;
+byte available_parks;
 byte bluetoothData;
 char buttonCode[CODE_LENGTH];
 int buttonState;                                                                                 // 0: stato iniziale, 1: *, 2:*X, 3:*XX, 4:*XXX, 5:*XXXX, 6:*XXXXX, 7:*XXXXX#
 int bluetoothState;                                                                              // -1: stato iniziale (attesa dato), 0: attesa tipo del pacchetto, 1: attesa pacchetto di tipo 0, 2: attesa pacchetto di tipo 1, 3: attesa terminatore di pacchetto
-int barrierState;                                                                                // -1: barrierClosed, 0: carEnter, 1: carExit
+int barrierState;                                                                                // -1 stato iniziale, 0: apertura barrirera, 1: entrata/uscita
+bool entering;
 unsigned long millisLedRgb;
+unsigned long millisBarrier;
 
 // Matrice bottoni
 char buttonMatrix[ROWS][COLS] = {
@@ -93,6 +96,7 @@ void setup() {
   state=0;
   buttonState=0;
   bluetoothData=-1;
+  bluetoothState = -1;
   available_parks=0;
   millisLedRgb=0;
   
@@ -130,9 +134,6 @@ void setup() {
 
   servo.attach(BARRIER_MOTOR);
   servo.write(angle);
-
-  attachInterrupt(digitalPinToInterrupt(BARRIER_SENSOR1), checkBarrierSensor1, RISING );    
-  attachInterrupt(digitalPinToInterrupt(BARRIER_SENSOR2), checkBarrierSensor2, RISING );   
 }
 
 void loop() {
@@ -174,9 +175,9 @@ void loop() {
 
       case 0:
         if (bluetoothData==0x00)
-          bluetoothState=0;
+          bluetoothState=1;
         else if (bluetoothData==0x01)
-          bluetoothState=1;          
+          bluetoothState=2;          
         
         break;
         
@@ -185,13 +186,23 @@ void loop() {
             led_RGB(255, 0, 0); // Led Red, Error 
             millisLedRgb = millis();
         }
-        else if (bluetoothData==1){  
+        else {  
             led_RGB(0, 255, 0); // Led Green, open barrier
-            millisLedRgb = millis();
+            millisLedRgb = 0;
+            barrierState=0;
 
-            servo.write(90);               
-            delay(3000);
-            servo.write(10);  
+            if (bluetoothData==1){                                  //Entrata
+               Serial.println("Entrata");
+               entering = true;
+            }
+
+            else if (bluetoothData==2){                             //Uscita
+               Serial.println("Uscita");
+               entering = false;
+            }
+
+            Serial.println("Vado a 90");
+            servo.write(90);                 
         }
 
         bluetoothState=3;   
@@ -214,40 +225,18 @@ void loop() {
     }
   }
 
-  if (millisLedRgb !=0 && (millis()-millisLedRgb) >= SEC_LED_RGB*1000){
+  if (millisLedRgb !=0 && (millis()-millisLedRgb) >= SEC_LED_RGB*1000){           //Spengo il led
       Serial.println (millisLedRgb-millis());
       led_RGB(0, 0, 0);
       millisLedRgb=0;
   }
 
-  /*
-  
-  if(digitalRead(BARRIER_SENSOR1)==LOW){
-    // scan from 0 to 180 degrees
-    //angle=90;
-    for(angle = 10; angle < 90; angle++)  
-    {                                  
-      servo.write(angle);               
-      //delay(15);                   
-    } 
-
-    while (digitalRead(BARRIER_SENSOR1)==LOW);             //Aspetto che la macchina sia andata via
-    delay(2*1000); 
-    
-    // now scan back from 180 to 0 degrees
-    for(angle = 90; angle > 10; angle--)    
-    {                                
-      servo.write(angle);           
-      //delay(15);       
-    } 
-  }
-  */
+  checkBarrier();
 
   for (int i=0; i<NUM_SLOTS; i++){
     checkSlot(i);
   }
 
-  //delay(3000);
 }
 
 
@@ -256,15 +245,6 @@ void display_number(int num) {                //Stampa un numero sul display 7 s
   for(int i=0; i<DISPLAY_SEGMENTS; i++) {
     digitalWrite(segments[i], displayNumber[num][i]);
   }
-
-  /*  
-  if (num == 0)
-    led_RGB(255, 0, 0);           //Led rosso (0 posti)
-  else if (num <= 2)
-    led_RGB(255,165,0);           //Led arancione (1 o 2 posti)
-  else
-    led_RGB(0, 255, 0);           //Led verde (più di 2 posti)
-   */
 }
 
 void checkSlot(int i){
@@ -287,17 +267,57 @@ void checkSlot(int i){
   }
 }
 
-void checkBarrierSensor1(){
-  //if (state==
-}
-
-void checkBarrierSensor2(){
-  
-}
-
 void led_RGB(int red_value, int green_value, int blue_value)
  {
   analogWrite(LED_RED, red_value);
   analogWrite(LED_GREEN, green_value);
   analogWrite(LED_BLUE, blue_value);
+}
+
+void checkBarrier(){
+  switch (barrierState){
+      case 0:
+      if (entering){
+         if (digitalRead(BARRIER_SENSOR2)==LOW)   //entering -> Aspetto l'attivazione del sensore 2
+            barrierState=1;
+      }
+      else{
+         if (digitalRead(BARRIER_SENSOR1)==LOW)
+            barrierState=1;
+      }
+      break;
+
+      case 1:
+         if (entering){
+            if (digitalRead(BARRIER_SENSOR2)==HIGH){   //entering -> Aspetto la disattivazione del sensore 2
+                barrierState=2;
+                millisBarrier=millis();
+            }
+         }
+         else{
+            if (digitalRead(BARRIER_SENSOR1)==HIGH){
+                barrierState=2;
+                millisBarrier=millis();
+            }
+         }
+         
+         break;
+      case 2:
+         if (entering){
+              if ((digitalRead(BARRIER_SENSOR2)==HIGH)&& (millis()-millisBarrier >= 1000*SEC_BARRIER)){
+                 led_RGB(0, 0, 0);
+                 servo.write(5);
+                 barrierState=-1;
+              }
+         }
+         else{
+              if ((digitalRead(BARRIER_SENSOR1)==HIGH)&& (millis()-millisBarrier >= 1000*SEC_BARRIER)){
+                 led_RGB(0, 0, 0);
+                 servo.write(5);
+                 barrierState=-1;
+              }
+         }
+            
+         break;
+  }
 }
