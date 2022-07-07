@@ -12,11 +12,13 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -27,6 +29,17 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.HttpHeaderParser;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -36,7 +49,19 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -103,6 +128,7 @@ public class PlaceholderFragment extends Fragment {
         a4 = binding.a4;
         a5 = binding.a5;
         a6 = binding.a6;
+        LinearLayout[] slotsListViews = {a1, a2, a3, a4, a5, a6};
         /*pageViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
             @Override
             public void onChanged(@Nullable String s) {
@@ -146,7 +172,7 @@ public class PlaceholderFragment extends Fragment {
 
                 //Subscribe to the target topic #. In that case the consumer will receive (if authorized) all the message
                 //passing through the broker
-                client.subscribe("iot/underground_smart_parking/#",2);
+                client.subscribe(BASE_TOPIC+"#",2);
 
                 // iot/underground_smart_parking/A/1
                 // ...
@@ -164,28 +190,17 @@ public class PlaceholderFragment extends Fragment {
                     public void messageArrived(String topic, MqttMessage message) throws Exception {
                         System.out.println(String.format("[%s] %s", topic, new String(message.getPayload())));
                         String messageReceived = new String(message.getPayload());
-                        switch (topic){
-                            case BASE_TOPIC + "price":
-                                price.setText(messageReceived+" $/h");
-                                break;
-                            case BASE_TOPIC + "available_slots":
-                                available_slots.setText("Posti disponibili: " + messageReceived);
-                                break;
-                            case BASE_TOPIC + "access_code":
-                                access_code.setText("CODICE ACCESSO: " + messageReceived);
-                                break;
-                            case BASE_TOPIC + "1":
-                                if(messageReceived.equals("0"))
-                                    a1.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshape, null));
-                                else
-                                    a1.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshapetaken, null));
-                                break;
-                            case BASE_TOPIC + "2":
-                                if(messageReceived.equals("0"))
-                                    a2.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshape, null));
-                                else
-                                    a2.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshapetaken, null));
-                                break;
+                        if(topic.contains(BASE_TOPIC+"price"))
+                            price.setText(messageReceived+" $/h");
+                        else if(topic.contains(BASE_TOPIC+"available_slots"))
+                            available_slots.setText("Posti disponibili: " + messageReceived);
+                        else if(topic.contains(BASE_TOPIC+"slot_state")) {
+                            String[] topicParts = topic.split("/");
+                            String slot = topicParts[topicParts.length-1];
+                            if(messageReceived.equals("0"))
+                                slotsListViews[Integer.parseInt(slot)].setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshape, null));
+                            else
+                                slotsListViews[Integer.parseInt(slot)].setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshapetaken, null));
 
                         }
 
@@ -214,9 +229,149 @@ public class PlaceholderFragment extends Fragment {
             book.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    Thread thread = new Thread(){
+                        public void run(){
+                            System.out.println("Thread Running");
+                            try {
+                                URL url = new URL ("https://www.picuruldemierezilnic.com/flask/booking");
+                                HttpURLConnection con = (HttpURLConnection)url.openConnection();
+                                con.setRequestMethod("POST");
+                                con.setRequestProperty("Content-Type", "application/json; utf-8");
+                                con.setRequestProperty("Accept", "application/json");
+                                con.setDoOutput(true);
+                                String jsonInputString = "{\"userId\": 1, \"locationId\": 1, \"type\":\"device\"}";
 
+                                try(OutputStream os = con.getOutputStream()) {
+                                    byte[] input = jsonInputString.getBytes("utf-8");
+                                    os.write(input, 0, input.length);
+                                }
+
+                                try(BufferedReader br = new BufferedReader(
+                                        new InputStreamReader(con.getInputStream(), "utf-8"))) {
+                                    StringBuilder response = new StringBuilder();
+                                    String responseLine = null;
+                                    while ((responseLine = br.readLine()) != null) {
+                                        response.append(responseLine.trim());
+                                    }
+                                    System.out.println(response.toString());
+                                    JSONObject jsonObject = null;
+                                    try {
+                                        jsonObject = new JSONObject(response.toString());
+                                        String code = jsonObject.getString("code");
+
+                                        access_code.setText("Codice Accesso: " + code);
+                                    } catch (JSONException e) {
+                                        access_code.setText("Codice Accesso non disponibile..");
+                                    }
+                                }
+
+                       /* RequestQueue requestQueue = Volley.newRequestQueue(view.getContext());
+                        String URL = "http://127.0.0.1:80/booking";// "https://www.picuruldemierezilnic.com/flask/booking";
+                        JSONObject jsonBody = new JSONObject();
+                        jsonBody.put("userId", 1);
+                        jsonBody.put("locationId", 1);
+                        jsonBody.put("type", "device");
+                        final String requestBody = jsonBody.toString();
+
+                        StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+                            @Override
+                            public void onResponse(String response) {
+                                Log.i("VOLLEY", response);
+
+                            }
+                        }, new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                Log.e("VOLLEY", error.toString());
+                            }
+                        }) {
+                            @Override
+                            public String getBodyContentType() {
+                                return "application/json; charset=utf-8";
+                            }
+
+                            @Override
+                            public byte[] getBody() throws AuthFailureError {
+                                try {
+                                    return requestBody == null ? null : requestBody.getBytes("utf-8");
+
+                                } catch (UnsupportedEncodingException uee) {
+                                    VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
+                                    return null;
+                                }
+                            }
+
+                            @Override
+                            protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                                String parsed;
+                                try {
+                                    parsed = new String(response.data, HttpHeaderParser.parseCharset(response.headers));
+                                    JSONObject jsonObject = null;
+                                    try {
+
+                                        jsonObject = new JSONObject(parsed);
+                                        String code = jsonObject.getString("code");
+
+                                        access_code.setText("Codice Accesso: " + code);
+                                    } catch (JSONException e) {
+                                        access_code.setText("Codice Accesso non disponibile..");
+                                    }
+                                } catch (UnsupportedEncodingException e) {
+                                    parsed = new String(response.data);
+                                }
+                                return Response.success(parsed, HttpHeaderParser.parseCacheHeaders(response));
+
+                            }
+                        };
+
+                        requestQueue.add(stringRequest);
+
+                        */
+                            } catch (MalformedURLException e) {
+                                e.printStackTrace();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    };
+
+                    thread.start();
+
+
+                    /*
+// Instantiate the RequestQueue.
+                    RequestQueue queue = Volley.newRequestQueue(inflater.getContext());
+                    String url = "https://www.picuruldemierezilnic.com/flask/booking";
+
+// Request a string response from the provided URL.
+                    StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                            new Response.Listener<String>() {
+                                @Override
+                                public void onResponse(String response) {
+                                    // Display the first 500 characters of the response string.
+                                    JSONObject jsonObject = null;
+                                    try {
+                                        jsonObject = new JSONObject(response);
+                                        String code = jsonObject.getString("code");
+
+                                        access_code.setText("Codice Accesso: " + code);
+                                    } catch (JSONException e) {
+                                        access_code.setText("Codice Accesso non disponibile..");
+                                    }
+
+                                }
+                            }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            access_code.setText("Codice Accesso non disponibile...");
+                        }
+                    });
+// Add the request to the RequestQueue.
+                    queue.add(stringRequest); */
                 }
             });
+
+
             logger.info("SimpleProducer started ...");
 
             try{
