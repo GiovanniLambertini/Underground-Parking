@@ -201,7 +201,6 @@ void loop() {
                entering = false;
             }
 
-            Serial.println("Vado a 90");
             servo.write(90);                 
         }
 
