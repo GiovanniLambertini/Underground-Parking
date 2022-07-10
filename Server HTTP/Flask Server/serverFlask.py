@@ -10,7 +10,6 @@ import dateutil
 import random
 import paho.mqtt.client as mqtt
 import threading
-#from flask_ngrok import run_with_ngrok
 
 appname = "IOT - sample1"
 app = Flask(appname)
@@ -427,5 +426,3 @@ if __name__ == '__main__':
     mqttServer.setup()
 
     app.run(host=interface, port=port)
-    #run_with_ngrok(app)
-    #app.run()
