@@ -47,9 +47,13 @@
 #define FINAL_STATE 3
 #define SEC_LED_RGB 5
 #define SEC_BARRIER 1
+#define BARRIER_DELAY 15
+#define BARRIER_STEPS 85
+#define BARRIER_DOWN 34
+#define BARRIER_UP 119
+
 
 Servo servo;
-int angle = 10;
 int slots[NUM_SLOTS]={PARK1, PARK2, PARK3, PARK4, PARK5, PARK6};
 bool slotsState[NUM_SLOTS];                                                                     // Occupato - false, Libero - true
 int segments[DISPLAY_SEGMENTS] {LED_A, LED_B, LED_C, LED_D, LED_E, LED_F, LED_G, LED_DP};       // Pin display 7 segmenti
@@ -60,6 +64,9 @@ char buttonCode[CODE_LENGTH];
 int buttonState;                                                                                 // 0: stato iniziale, 1: *, 2:*X, 3:*XX, 4:*XXX, 5:*XXXX, 6:*XXXXX, 7:*XXXXX#
 int bluetoothState;                                                                              // -1: stato iniziale (attesa dato), 0: attesa tipo del pacchetto, 1: attesa pacchetto di tipo 0, 2: attesa pacchetto di tipo 1, 3: attesa terminatore di pacchetto
 int barrierState;                                                                                // -1 stato iniziale, 0: apertura barrirera, 1: entrata/uscita
+int openingBarrierState;  
+int millisBarrierState;  
+bool openingBarrier;                                                                       
 bool entering;
 unsigned long millisLedRgb;
 unsigned long millisBarrier;
@@ -97,6 +104,7 @@ void setup() {
   buttonState=0;
   bluetoothData=-1;
   bluetoothState = -1;
+  openingBarrierState = -1;
   available_parks=0;
   millisLedRgb=0;
   
@@ -133,7 +141,7 @@ void setup() {
   Serial1.begin(9600);          //Bluetooth
 
   servo.attach(BARRIER_MOTOR);
-  servo.write(angle);
+  servo.write(BARRIER_DOWN);
 }
 
 void loop() {
@@ -201,7 +209,9 @@ void loop() {
                entering = false;
             }
 
-            servo.write(90);                 
+            openingBarrierState = 0;
+            millisBarrierState = millis();
+            openingBarrier = true;               
         }
 
         bluetoothState=3;   
@@ -232,6 +242,20 @@ void loop() {
 
   checkBarrier();
 
+  if (openingBarrierState != -1){                                           //apertura graduale sbarra
+      if (millisBarrierState - millis() >= (unsigned long) openingBarrierState*BARRIER_DELAY){
+        if (openingBarrier)
+           servo.write(BARRIER_DOWN+openingBarrierState);
+        else
+           servo.write(BARRIER_UP-openingBarrierState);
+           
+        if (openingBarrierState == BARRIER_STEPS-1)
+           openingBarrierState = -1;
+        else
+           openingBarrierState++;
+      }
+  }
+
   for (int i=0; i<NUM_SLOTS; i++){
     checkSlot(i);
   }
@@ -248,8 +272,11 @@ void display_number(int num) {                //Stampa un numero sul display 7 s
 
 void checkSlot(int i){
   int newState = digitalRead(slots[i]);
+  
   if (slotsState[i] != newState){          //Se lo stato del pacheggio è cambiato
     slotsState[i] = newState;
+
+    Serial.println(i);
     
     //Invia il pacchetto dati con l'aggiornamento dello stato del posto
     Serial1.write(0xff);
@@ -302,19 +329,19 @@ void checkBarrier(){
          
          break;
       case 2:
-         if (entering){
-              if ((digitalRead(BARRIER_SENSOR2)==HIGH)&& (millis()-millisBarrier >= 1000*SEC_BARRIER)){
+         if ((entering && (digitalRead(BARRIER_SENSOR2)==HIGH)&& (millis()-millisBarrier >= 1000*SEC_BARRIER))){
                  led_RGB(0, 0, 0);
-                 servo.write(5);
+                 openingBarrierState = 0;
+                 openingBarrier = false;
                  barrierState=-1;
-              }
+                 millisBarrierState = millis();
          }
-         else{
-              if ((digitalRead(BARRIER_SENSOR1)==HIGH)&& (millis()-millisBarrier >= 1000*SEC_BARRIER)){
+         else if (!entering && (digitalRead(BARRIER_SENSOR1)==HIGH)&& (millis()-millisBarrier >= 1000*SEC_BARRIER)){
                  led_RGB(0, 0, 0);
-                 servo.write(5);
+                 openingBarrierState = 0;
+                 openingBarrier = false;
                  barrierState=-1;
-              }
+                 millisBarrierState = millis();
          }
             
          break;

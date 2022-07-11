@@ -20,7 +20,7 @@ app.config.from_object(myconfig)
 db = SQLAlchemy(app)
 
 CODE_LENGTH=5
-BOOKING_MINUTES = 60
+BOOKING_MINUTES = 1
 BASE_TOPIC = "iot/underground_smart_parking/"
 PRICE_TOPIC = BASE_TOPIC + "price/"
 SLOT_STATE_TOPIC = BASE_TOPIC + "slot_state/"
@@ -157,6 +157,9 @@ class MQTTServer():
     def setup(self):
         self.setupMQTT()
 
+global mqttServer
+mqttServer = MQTTServer()
+mqttServer.setup()
 
 @app.errorhandler(404)
 def page_not_found(error):
@@ -420,9 +423,5 @@ if __name__ == '__main__':
     interface = '0.0.0.0'
 
     checkBooking()
-
-    global mqttServer
-    mqttServer = MQTTServer()
-    mqttServer.setup()
 
     app.run(host=interface, port=port)
