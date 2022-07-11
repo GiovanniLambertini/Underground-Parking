@@ -71,11 +71,13 @@ import rbi.android.smartundergroundparkingapp.EngineTemperatureSensor;
 import rbi.android.smartundergroundparkingapp.R;
 import rbi.android.smartundergroundparkingapp.databinding.FragmentMainBinding;
 
+
+
 /**
  * A placeholder fragment containing a simple view.
  */
 public class PlaceholderFragment extends Fragment {
-
+    static final String FLASK_URL_BOOKING = "http://10.0.2.2/booking";
     private static final String ARG_SECTION_NUMBER = "section_number";
 
     private PageViewModel pageViewModel;
@@ -135,7 +137,7 @@ public class PlaceholderFragment extends Fragment {
                 textView.setText(s);
             }
         });*/
-        price.setText("3$/h");
+        price.setText("");
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
@@ -191,16 +193,18 @@ public class PlaceholderFragment extends Fragment {
                         System.out.println(String.format("[%s] %s", topic, new String(message.getPayload())));
                         String messageReceived = new String(message.getPayload());
                         if(topic.contains(BASE_TOPIC+"price"))
-                            price.setText(messageReceived+" $/h");
+                            price.setText( String.format("%.2f", Double.parseDouble(messageReceived))+" €/h");
                         else if(topic.contains(BASE_TOPIC+"available_slots"))
                             available_slots.setText("Posti disponibili: " + messageReceived);
+                        else if(topic.contains(BASE_TOPIC+"total_price_paid"))
+                            access_code.setText("Costo parcheggio: " + messageReceived+" €");
                         else if(topic.contains(BASE_TOPIC+"slot_state")) {
                             String[] topicParts = topic.split("/");
                             String slot = topicParts[topicParts.length-1];
                             if(messageReceived.equals("0"))
-                                slotsListViews[Integer.parseInt(slot)].setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshape, null));
+                                slotsListViews[Integer.parseInt(slot)-1].setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshapetaken, null));
                             else
-                                slotsListViews[Integer.parseInt(slot)].setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshapetaken, null));
+                                slotsListViews[Integer.parseInt(slot)-1].setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.slotshape, null));
 
                         }
 
@@ -233,7 +237,7 @@ public class PlaceholderFragment extends Fragment {
                         public void run(){
                             System.out.println("Thread Running");
                             try {
-                                URL url = new URL ("https://www.picuruldemierezilnic.com/flask/booking");
+                                URL url = new URL (FLASK_URL_BOOKING);//"https://www.picuruldemierezilnic.com/flask/booking");
                                 HttpURLConnection con = (HttpURLConnection)url.openConnection();
                                 con.setRequestMethod("POST");
                                 con.setRequestProperty("Content-Type", "application/json; utf-8");
@@ -341,7 +345,7 @@ public class PlaceholderFragment extends Fragment {
                     /*
 // Instantiate the RequestQueue.
                     RequestQueue queue = Volley.newRequestQueue(inflater.getContext());
-                    String url = "https://www.picuruldemierezilnic.com/flask/booking";
+                    String url = FLASK_URL_BOOKING;
 
 // Request a string response from the provided URL.
                     StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
