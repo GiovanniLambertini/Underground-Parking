@@ -21,7 +21,7 @@ app.config.from_object(myconfig)
 db = SQLAlchemy(app)
 
 CODE_LENGTH=5
-BOOKING_MINUTES = 1
+BOOKING_MINUTES = 3
 BASE_TOPIC = "iot/underground_smart_parking/"
 PRICE_TOPIC = BASE_TOPIC + "price/"
 SLOT_STATE_TOPIC = BASE_TOPIC + "slot_state/"
@@ -326,7 +326,7 @@ def exit():
     db.session.add(availableSlots)
     db.session.commit()
 
-    mqttServer.clientMQTT.publish(AVAILABLE_SLOTS_TOPIC + body['locationId'], str(newAvailableSlots), qos=QOS, retain=True)
+    mqttServer.clientMQTT.publish(AVAILABLE_SLOTS_TOPIC + str(body['locationId']), str(newAvailableSlots), qos=QOS, retain=True)
     mqttServer.clientMQTT.publish(BARRIER_OPENING + 'exit', '1', qos=QOS)
 
     return jsonify({'successful': True, 'price': totalPrice}), '200 OK'
