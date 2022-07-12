@@ -169,18 +169,7 @@ def page_not_found(error):
 
 @app.route('/')
 def testoHTML():
-    #if request.accept_mimetypes['application/json']:
     return jsonify( {'successful':True, 'second':'Gio'}), '200 OK'
-
-@app.route('/prova', methods=['GET'])
-def prova():
-    elenco=User.query.order_by(User.userId.desc()).limit(10).all()
-
-    string = ''
-    for el in elenco:
-        string += str(el.userId) + ', '
-
-    return string
 
 @app.route('/booking', methods=['POST'])
 def bookParkSlot():
@@ -204,11 +193,6 @@ def bookParkSlot():
                 code += str(random.randint(0,9))
             code += "#"
 
-            #Controllo che il codice non sia gia' in uso
-            #now = dateutil.parser.parse(datetime.utcnow().isoformat())
-            #booking_minutes_ago = now - timedelta(days=30)
-
-            #usedCodes = db.session.query(Booking).filter(Booking.locationId == body['locationId'], Booking.timestamp >= booking_minutes_ago).with_entities(Booking.code).all()
             usedCodes = db.session.query(Booking).filter(Booking.locationId == body['locationId'], Booking.bookingStatus != 'expired', Booking.bookingStatus != 'used').with_entities(Booking.code).all()       # Codici in uso o ancora validi
 
             if (code, ) not in usedCodes:
@@ -277,8 +261,6 @@ def enter():
     parked = Parked(booking.userId, booking.locationId, currentPrice[int(body['locationId'])], booking.code)
     db.session.add(parked)
     db.session.commit()
-
-    #available_slots = db.session.query(SlotAvailability).order_by(SlotAvailability.timestamp.desc().limit(1)).filter(SlotAvailability.isAvailable == True).group_by(SlotAvailability.slotId)
 
     mqttServer.clientMQTT.publish(BARRIER_OPENING + 'enter', '1', qos=QOS)
     return jsonify({'successful': True}), '200 OK'

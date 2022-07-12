@@ -21,7 +21,7 @@ if __name__ == '__main__':
     else:
         print("Error " + str(body.status_code))
 
-    # Booking
+    # Entering
     input("Press Enter when you are in front of the barrier ...")
     body = requests.post(API_ENTER, json={"type": "car", "locationId": str(LOCATION_ID), "userId": str(USER_ID)})
 
@@ -33,5 +33,22 @@ if __name__ == '__main__':
             print("Full parking, try with another park or try again later")
     elif body.status_code == 401:
         print ("Error, no valid reservation found for this user")
+    else:
+        print("Error " + str(body.status_code))
+
+    # Exit
+    input("Press Enter when you are in front of the barrier ...")
+    body = requests.post(API_EXIT, json={"type": "car", "locationId": str(LOCATION_ID), "userId": str(USER_ID)})
+
+    if body.status_code == 200:
+        response = body.json();
+        if (response['successful'] == True):
+            print("Opening barrier...")
+            print("You have paid: " + str(response['total_price']) + " euros")
+
+        else:
+            print("Error, try again")
+    elif body.status_code == 401:
+        print("Error, no valid reservation found for this user")
     else:
         print("Error " + str(body.status_code))
