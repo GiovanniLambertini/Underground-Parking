@@ -38,13 +38,12 @@
         <TableRow>
 
             <LinearLayout
-                android:id="@+id/a1"
+                android:id="@+id/a3"
                 android:layout_width="150dp"
                 android:layout_height="100dp"
-
-                android:orientation="horizontal"
-                android:background="@drawable/slotshapetaken"
                 android:layout_margin="10dp"
+                android:orientation="horizontal"
+                android:background="@drawable/slotshape"
                 >
 
                 <TextView
@@ -55,18 +54,16 @@
                     android:layout_gravity="center_vertical"
                     android:textColor="#00D3FE"
                     android:textAlignment="center"
-                    android:text="A1" />
+                    android:text="A3" />
             </LinearLayout>
 
             <LinearLayout
-
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:orientation="horizontal"
-               >
+                android:orientation="horizontal">
 
                 <TextView
-                    android:gravity="center"
+                    android:gravity="right"
                     android:padding="3dip"
                     android:text=""
                     android:layout_height="20dp"
@@ -74,13 +71,13 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/a4"
+                android:id="@+id/a6"
                 android:layout_width="150dp"
                 android:layout_height="100dp"
-
+                android:layout_margin="10dp"
                 android:orientation="horizontal"
                 android:background="@drawable/slotshape"
-                android:layout_margin="10dp">
+                >
 
                 <TextView
                     android:layout_width="match_parent"
@@ -90,10 +87,12 @@
                     android:layout_gravity="center_vertical"
                     android:textColor="#00D3FE"
                     android:textAlignment="center"
-                    android:text="A4" />
+                    android:text="A6" />
             </LinearLayout>
 
         </TableRow>
+
+
         <TableRow>
 
             <LinearLayout
@@ -153,45 +152,13 @@
         <TableRow>
 
             <LinearLayout
-                android:id="@+id/a3"
+                android:id="@+id/a1"
                 android:layout_width="150dp"
                 android:layout_height="100dp"
-                android:layout_margin="10dp"
+
                 android:orientation="horizontal"
-                android:background="@drawable/slotshape"
-               >
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="20dp"
-                    android:padding="20dip"
-                    android:layout_gravity="center_vertical"
-                    android:textColor="#00D3FE"
-                    android:textAlignment="center"
-                    android:text="A3" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:gravity="right"
-                    android:padding="3dip"
-                    android:text=""
-                    android:layout_height="20dp"
-                    android:layout_width="20dp"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/a6"
-                android:layout_width="150dp"
-                android:layout_height="100dp"
+                android:background="@drawable/slotshapetaken"
                 android:layout_margin="10dp"
-                android:orientation="horizontal"
-                android:background="@drawable/slotshape"
                 >
 
                 <TextView
@@ -202,7 +169,42 @@
                     android:layout_gravity="center_vertical"
                     android:textColor="#00D3FE"
                     android:textAlignment="center"
-                    android:text="A6" />
+                    android:text="A1" />
+            </LinearLayout>
+
+            <LinearLayout
+
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:orientation="horizontal"
+                >
+
+                <TextView
+                    android:gravity="center"
+                    android:padding="3dip"
+                    android:text=""
+                    android:layout_height="20dp"
+                    android:layout_width="20dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/a4"
+                android:layout_width="150dp"
+                android:layout_height="100dp"
+
+                android:orientation="horizontal"
+                android:background="@drawable/slotshape"
+                android:layout_margin="10dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="20dp"
+                    android:padding="20dip"
+                    android:layout_gravity="center_vertical"
+                    android:textColor="#00D3FE"
+                    android:textAlignment="center"
+                    android:text="A4" />
             </LinearLayout>
 
         </TableRow>
@@ -243,7 +245,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:textSize="20dp"
-                android:text="CODICE ACCESSO: *426932#" />
+                android:text="" />
 
             <Button
                 android:id="@+id/book"

@@ -2,10 +2,19 @@ import pandas as pd
 from fbprophet import Prophet
 import matplotlib.pyplot as plt
 import paho.mqtt.client as mqtt
+import  numpy as np
+from datetime import datetime, timedelta
+import dateutil
+import dateutil.parser
 plt.style.use('fivethirtyeight')
 
 PRICE_TOPIC = "iot/underground_smart_parking/price/1"
 QOS = 2
+PREDICTION_RANGE = 2
+BASE_PRICE = 1
+EXP = 1.4
+NUM_SLOTS = 6
+NORMALIZATION = 0.5/NUM_SLOTS
 
 def fzwait():
     if False:
@@ -39,8 +48,6 @@ if __name__ == "__main__":
     mqttServer = MQTTServer()
     mqttServer.setup()
 
-    mqttServer.clientMQTT.publish(PRICE_TOPIC, '{:f}'.format(2.2), qos=QOS, retain=True)
-
     # 1. lettura dati
     df = pd.read_csv('slot_availability.csv')
     print(df.head(5))
@@ -55,12 +62,31 @@ if __name__ == "__main__":
 
     #3.0 show data
     ax = df.set_index('ds').plot(figsize=(12, 8))
-    ax.set_ylabel('Monthly Number of Airline Passengers')
+    ax.set_ylabel('Monthly parking slot occupations')
     ax.set_xlabel('Date')
 
     plt.show()
 
     fzwait()
+
+    m = Prophet(changepoint_prior_scale=0.01).fit(df)
+    future = m.make_future_dataframe(periods=3000, freq='60min')
+    fcst = m.predict(future)
+    fig = m.plot(fcst)
+    fig.show()
+    print(fcst)
+
+    now = dateutil.parser.parse(datetime.utcnow().isoformat())
+    future_time = now - timedelta(hours=PREDICTION_RANGE)
+
+    #fcst["ds"]=pd.to_datetime(fcst["ds"], format="YYYY-mm-dd hh:mm:ss")
+    future_state = fcst.loc[(fcst["ds"].dt.year == future_time.year) & (fcst["ds"].dt.month == future_time.month) & (fcst["ds"].dt.day == future_time.day) & (fcst["ds"].dt.hour == future_time.hour) ]
+    print("AAA "+str(future_state["trend"].iloc[0]))
+
+    average_future_occupation = future_state["trend"].iloc[0]
+    current_price = BASE_PRICE + (average_future_occupation ** EXP) * NORMALIZATION
+
+    mqttServer.clientMQTT.publish(PRICE_TOPIC, '{:f}'.format(current_price), qos=QOS, retain=True)
 
     #4.0 model creation
     my_model = Prophet(interval_width=0.95, weekly_seasonality=True)
@@ -78,13 +104,13 @@ if __name__ == "__main__":
     forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail()
 
     #8.0 plot of the forecast
-    plt2 = my_model.plot(forecast, uncertainty=True)
-    plt2.show()
+    #plt2 = my_model.plot(forecast, uncertainty=True)
+   # plt2.show()
     fzwait()
 
 
 
-    plt3 = my_model.plot_components(forecast)
-    plt3.show()
+   # plt3 = my_model.plot_components(forecast)
+   # plt3.show()
     fzwait()
 

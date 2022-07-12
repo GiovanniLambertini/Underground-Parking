@@ -6,7 +6,7 @@ Arduino to Bridge:
     - 1 byte tipo:1
     - 1 byte sezione: x
     - 1 byte idSlot: x
-    - 1 byte stato: 0 o 1
+    - 1 byte stato: 0 o 1   (0 occupato, 1 libero)
 
 Bridge to Arduino:
 1) Esito codice:

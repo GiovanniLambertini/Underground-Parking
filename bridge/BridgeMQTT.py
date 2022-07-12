@@ -10,7 +10,7 @@ import requests
 # pip install pymqtt
 import paho.mqtt.client as mqtt
 
-PORT_NAME = 'COM7'                                        #COM Bluetooth
+PORT_NAME = 'COM5'                                        #COM Bluetooth
 LOCATION_ID = 1
 QOS = 2
 BASE_TOPIC = 'iot/underground_smart_parking/'
@@ -37,6 +37,10 @@ class Bridge():
             print (port.description)
             if PORT_NAME in port.description:
                 self.portname = port.device
+        if self.portname == None:
+            print ("Error connecting to bluetooth port!")
+            quit()
+
         print ("connecting to " + self.portname)
 
         while self.serial == None:
@@ -75,7 +79,7 @@ class Bridge():
             response += (b'\x01')  # Pacchetto di tipo 1
             response += availableSlots.to_bytes(1, 'little')
             response += (b'\xfe')
-            print (response)
+
             self.serial.write(response)
 
         if BARRIER_OPENING in msg.topic:
@@ -151,11 +155,12 @@ class Bridge():
                 print("Error " + str(body.status_code))
 
         elif self.inbuffer[1] == b'\x01':
-            section = self.inbuffer[2]
+
+            section = self.inbuffer[2].decode("utf-8")
             slotId = int.from_bytes(self.inbuffer[3], byteorder='little')
             value = int.from_bytes(self.inbuffer[4], byteorder='little')                                # 0 libero, 1 occupato
             print(SLOT_STATE_TOPIC + str(section) + '/' + str(slotId))
-            self.clientMQTT.publish(SLOT_STATE_TOPIC + str(section) + '/' + str(slotId), '{:d}'.format(value), qos=QOS)
+            self.clientMQTT.publish(SLOT_STATE_TOPIC + str(section) + '/' + str(slotId), '{:d}'.format(value), qos=QOS, retain=True)
 
 if __name__ == '__main__':
     br=Bridge()

@@ -7,6 +7,7 @@ from flask import render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import dateutil
+import dateutil.parser
 import random
 import paho.mqtt.client as mqtt
 import threading
@@ -20,12 +21,13 @@ app.config.from_object(myconfig)
 db = SQLAlchemy(app)
 
 CODE_LENGTH=5
-BOOKING_MINUTES = 1
+BOOKING_MINUTES = 3
 BASE_TOPIC = "iot/underground_smart_parking/"
 PRICE_TOPIC = BASE_TOPIC + "price/"
 SLOT_STATE_TOPIC = BASE_TOPIC + "slot_state/"
 AVAILABLE_SLOTS_TOPIC = BASE_TOPIC + "available_slots/"
 BARRIER_OPENING = BASE_TOPIC + 'barrier/'
+FINAL_PRICE = BASE_TOPIC + "total_price_paid/"
 QOS = 2
 
 currentPrice = {}
@@ -182,8 +184,9 @@ def prova():
 
 @app.route('/booking', methods=['POST'])
 def bookParkSlot():
+    print("giovanni")
     body = request.get_json()
-
+    print(body)
     if not 'type' in body or not 'userId' in body or not 'locationId' in body:
         return jsonify( {'successful':False, 'error':'Some mandatory fields are missing'}), '400 Bad Request'
 
@@ -313,8 +316,10 @@ def exit():
     db.session.commit()
 
     #Calcolo il prezzo da pagare
-    total_hour = (dateutil.parser.parse(parked.exitTimestamp.isoformat()) - dateutil.parser.parse(parked.entranceTimestamp.isoformat())).total_seconds()/3600
+    total_hour = (dateutil.parser.parse(parked.exitTimestamp.isoformat()) - dateutil.parser.parse(parked.entranceTimestamp.isoformat())).total_seconds()//3600 + 1
     totalPrice = parked.pricePerHour*total_hour
+
+    mqttServer.clientMQTT.publish(FINAL_PRICE + str(parked.userId), totalPrice, qos=QOS)
 
     previousAvailableSlots = db.session.query(AvailableSlots).filter(AvailableSlots.locationId == body['locationId']).order_by(AvailableSlots.timestamp.desc()).with_entities(AvailableSlots.numAvailableSlots).first()
     newAvailableSlots = previousAvailableSlots[0] + 1
@@ -323,7 +328,7 @@ def exit():
     db.session.add(availableSlots)
     db.session.commit()
 
-    mqttServer.clientMQTT.publish(AVAILABLE_SLOTS_TOPIC + body['locationId'], str(newAvailableSlots), qos=QOS, retain=True)
+    mqttServer.clientMQTT.publish(AVAILABLE_SLOTS_TOPIC + str(body['locationId']), str(newAvailableSlots), qos=QOS, retain=True)
     mqttServer.clientMQTT.publish(BARRIER_OPENING + 'exit', '1', qos=QOS)
 
     return jsonify({'successful': True, 'price': totalPrice}), '200 OK'

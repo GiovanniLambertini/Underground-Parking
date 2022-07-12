@@ -279,6 +279,7 @@ void checkSlot(int i){
   int newState = digitalRead(slots[i]);
   
   if (slotsState[i] != newState){          //Se lo stato del pacheggio è cambiato
+    Serial.println(i);
     slotsState[i] = newState;
 
     Serial.println(i);
