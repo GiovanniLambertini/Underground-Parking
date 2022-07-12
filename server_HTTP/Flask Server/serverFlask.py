@@ -173,9 +173,9 @@ def testoHTML():
 
 @app.route('/booking', methods=['POST'])
 def bookParkSlot():
-    print("giovanni")
+
     body = request.get_json()
-    print(body)
+
     if not 'type' in body or not 'userId' in body or not 'locationId' in body:
         return jsonify( {'successful':False, 'error':'Some mandatory fields are missing'}), '400 Bad Request'
 
