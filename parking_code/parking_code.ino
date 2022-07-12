@@ -47,7 +47,7 @@
 #define FINAL_STATE 3
 #define SEC_LED_RGB 5
 #define SEC_BARRIER 1
-#define BARRIER_DELAY 15
+#define BARRIER_DELAY 30
 #define BARRIER_STEPS 85
 #define BARRIER_DOWN 34
 #define BARRIER_UP 119
@@ -65,7 +65,7 @@ int buttonState;                                                                
 int bluetoothState;                                                                              // -1: stato iniziale (attesa dato), 0: attesa tipo del pacchetto, 1: attesa pacchetto di tipo 0, 2: attesa pacchetto di tipo 1, 3: attesa terminatore di pacchetto
 int barrierState;                                                                                // -1 stato iniziale, 0: apertura barrirera, 1: entrata/uscita
 int openingBarrierState;  
-int millisBarrierState;  
+unsigned long millisBarrierState;  
 bool openingBarrier;                                                                       
 bool entering;
 unsigned long millisLedRgb;
@@ -148,11 +148,14 @@ void loop() {
   
   char button = customKeypad.getKey();                     // Leggo il bottone premuto
 
-  if (button) {                                            //Se è stato premuto un bottone
+  if (button) {     //Se è stato premuto un bottone
+    led_RGB(255, 0, 255);
     Serial.println(button);
+    Serial.print("Button state:");
+    Serial.println(buttonState);
      buttonCode[buttonState]=button;
     if (button == INITIAL_CHAR){                           //Carattere *, resetto lo stato
-      buttonState++;
+      buttonState=1;
     }
     else if (buttonState>=1 && buttonState<CODE_LENGTH-1){              //Nuova cifra, aggiorno lo stato
       buttonState++;
@@ -169,6 +172,7 @@ void loop() {
       }
       buttonState=0;
     }
+    led_RGB(0,0,0);
   }
 
   if (Serial1.available()>0){
@@ -243,7 +247,8 @@ void loop() {
   checkBarrier();
 
   if (openingBarrierState != -1){                                           //apertura graduale sbarra
-      if (millisBarrierState - millis() >= (unsigned long) openingBarrierState*BARRIER_DELAY){
+      Serial.println(millis() - millisBarrierState);
+      if (millis() - millisBarrierState >= (unsigned int) openingBarrierState*BARRIER_DELAY){
         if (openingBarrier)
            servo.write(BARRIER_DOWN+openingBarrierState);
         else
@@ -303,47 +308,26 @@ void led_RGB(int red_value, int green_value, int blue_value)
 void checkBarrier(){
   switch (barrierState){
       case 0:
-      if (entering){
-         if (digitalRead(BARRIER_SENSOR2)==LOW)   //entering -> Aspetto l'attivazione del sensore 2
+      if ((entering && digitalRead(BARRIER_SENSOR2)==LOW) || (!entering && digitalRead(BARRIER_SENSOR1)==LOW))       //Aspetto l'attivazione del sensore   
             barrierState=1;
-      }
-      else{
-         if (digitalRead(BARRIER_SENSOR1)==LOW)
-            barrierState=1;
-      }
-      break;
 
+      break;
+      
       case 1:
-         if (entering){
-            if (digitalRead(BARRIER_SENSOR2)==HIGH){   //entering -> Aspetto la disattivazione del sensore 2
+         if ((entering && digitalRead(BARRIER_SENSOR2)==HIGH) || (!entering && digitalRead(BARRIER_SENSOR1)==HIGH)){  //Aspetto la disattivazione del sensore  
                 barrierState=2;
                 millisBarrier=millis();
-            }
-         }
-         else{
-            if (digitalRead(BARRIER_SENSOR1)==HIGH){
-                barrierState=2;
-                millisBarrier=millis();
-            }
          }
          
          break;
       case 2:
-         if ((entering && (digitalRead(BARRIER_SENSOR2)==HIGH)&& (millis()-millisBarrier >= 1000*SEC_BARRIER))){
+         if ((entering && (digitalRead(BARRIER_SENSOR2)==HIGH)&& (millis()-millisBarrier >= 1000*SEC_BARRIER)) || (!entering && (digitalRead(BARRIER_SENSOR1)==HIGH)&& (millis()-millisBarrier >= 1000*SEC_BARRIER))){
                  led_RGB(0, 0, 0);
                  openingBarrierState = 0;
                  openingBarrier = false;
                  barrierState=-1;
                  millisBarrierState = millis();
          }
-         else if (!entering && (digitalRead(BARRIER_SENSOR1)==HIGH)&& (millis()-millisBarrier >= 1000*SEC_BARRIER)){
-                 led_RGB(0, 0, 0);
-                 openingBarrierState = 0;
-                 openingBarrier = false;
-                 barrierState=-1;
-                 millisBarrierState = millis();
-         }
-            
          break;
   }
 }

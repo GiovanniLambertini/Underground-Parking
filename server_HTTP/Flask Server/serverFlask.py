@@ -275,6 +275,8 @@ def enter():
     db.session.add(parked)
     db.session.commit()
 
+    #available_slots = db.session.query(SlotAvailability).order_by(SlotAvailability.timestamp.desc().limit(1)).filter(SlotAvailability.isAvailable == True).group_by(SlotAvailability.slotId)
+
     mqttServer.clientMQTT.publish(BARRIER_OPENING + 'enter', '1', qos=QOS)
     return jsonify({'successful': True}), '200 OK'
 

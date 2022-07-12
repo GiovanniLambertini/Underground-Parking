@@ -46,7 +46,7 @@ class Bridge():
             except:
                 self.serial = None
 
-        # internal input buffer from serial
+        # buffer interno dalla seriale
         self.inbuffer = []
 
     def setupMQTT(self):
