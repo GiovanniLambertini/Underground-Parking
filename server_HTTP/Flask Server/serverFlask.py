@@ -75,7 +75,7 @@ class SlotAvailability(db.Model):
     locationId = db.Column(db.Integer, db.ForeignKey('parking.locationId'), primary_key=True)
     slotId = db.Column(db.Integer, db.ForeignKey('slot.slotId'), primary_key=True)
     slotSection = db.Column(db.String(2),  db.ForeignKey('slot.slotSection'), primary_key=True)
-    timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime(timezone=True), primary_key=True, default=datetime.utcnow)
     isAvailable = db.Column(db.Boolean)
 
     def __init__(self, locationId, slotId, slotSection, isAvailable):
@@ -131,7 +131,7 @@ class MQTTServer():
         print("Connected with result code " + str(rc))
 
         self.clientMQTT.subscribe(PRICE_TOPIC+"#")
-        self.clientMQTT.subscribe(SLOT_STATE_TOPIC)
+        self.clientMQTT.subscribe(SLOT_STATE_TOPIC+"#")
 
 
     def on_message(self, client, userdata, msg):
@@ -143,10 +143,11 @@ class MQTTServer():
             currentPrice[locationId] = float(msg.payload)
 
         elif SLOT_STATE_TOPIC in msg.topic:
+            #print(msg.topic)
             slot = msg.topic.replace(SLOT_STATE_TOPIC, "")
             locationId, slotSection, slotId = slot.split("/")
 
-            if msg.payload == "1":
+            if str(msg.payload) == "b'1'":
                 isAvailable = True
             else:
                 isAvailable = False
@@ -261,13 +262,12 @@ def enter():
     db.session.add(parked)
     db.session.commit()
 
-    nearest_slot = 1
-
-    slots = db.session.query(SlotAvailability).group_by(SlotAvailability.slotId).order_by(SlotAvailability.timestamp.desc())
-    print (slots)
+    #slots = db.session.query(SlotAvailability).group_by(SlotAvailability.slotId).order_by(SlotAvailability.timestamp.desc()).with_entities(SlotAvailability.slotId, SlotAvailability.isAvailable).first()
+    cte = db.session.query(SlotAvailability.slotId, db.func.max(SlotAvailability.timestamp).label('max_timestamp')).group_by(SlotAvailability.slotId).cte(name='cte')
+    nearest_slot = db.session.query(SlotAvailability).join(cte, db.and_(SlotAvailability.slotId == cte.c.slotId, SlotAvailability.timestamp == cte.c.max_timestamp)).filter(SlotAvailability.isAvailable == True).order_by(SlotAvailability.slotId).with_entities(SlotAvailability.slotId).first()
 
     mqttServer.clientMQTT.publish(BARRIER_OPENING + 'enter', '1', qos=QOS)
-    return jsonify({'successful': True, 'slot': nearest_slot}), '200 OK'
+    return jsonify({'successful': True, 'slot': nearest_slot[0]}), '200 OK'
 
 @app.route('/exit', methods=['POST'])
 def exit():

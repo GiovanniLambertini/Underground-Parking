@@ -5,12 +5,12 @@ API_BOOKING = BASE_API + "booking"
 API_ENTER = BASE_API + "enter"
 API_EXIT = BASE_API + "exit"
 LOCATION_ID = 1
-USER_ID = 3
 
 if __name__ == '__main__':
     #Booking
+    user_id = input("Insert userId:")
     input("Press Enter to book a slot...")
-    body = requests.post(API_BOOKING, json={"type": "car", "locationId": str(LOCATION_ID), "userId": str(USER_ID)})
+    body = requests.post(API_BOOKING, json={"type": "car", "locationId": str(LOCATION_ID), "userId": str(user_id)})
 
     if body.status_code == 200:
         if (body.json()['successful'] == True):
@@ -25,13 +25,13 @@ if __name__ == '__main__':
 
     # Entering
     input("Press Enter when you are in front of the barrier ...")
-    body = requests.post(API_ENTER, json={"type": "car", "locationId": str(LOCATION_ID), "userId": str(USER_ID)})
+    body = requests.post(API_ENTER, json={"type": "car", "locationId": str(LOCATION_ID), "userId": str(user_id)})
 
     if body.status_code == 200:
         response = body.json()
         if (response['successful'] == True):
             print("Opening barrier...")
-            print ("Nearest slot is: ") + str(response['slot'])
+            print ("Nearest slot is: " + str(response['slot']))
 
         else:
             print("Full parking, try with another park or try again later")
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     # Exit
     input("Press Enter when you are in front of the barrier ...")
-    body = requests.post(API_EXIT, json={"type": "car", "locationId": str(LOCATION_ID), "userId": str(USER_ID)})
+    body = requests.post(API_EXIT, json={"type": "car", "locationId": str(LOCATION_ID), "userId": str(user_id)})
 
     if body.status_code == 200:
         response = body.json();

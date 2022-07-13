@@ -81,10 +81,9 @@ if __name__ == "__main__":
 
     #fcst["ds"]=pd.to_datetime(fcst["ds"], format="YYYY-mm-dd hh:mm:ss")
     future_state = fcst.loc[(fcst["ds"].dt.year == future_time.year) & (fcst["ds"].dt.month == future_time.month) & (fcst["ds"].dt.day == future_time.day) & (fcst["ds"].dt.hour == future_time.hour) ]
-    print("AAA "+str(future_state["trend"].iloc[0]))
 
-    average_future_occupation = future_state["trend"].iloc[0]
-    current_price = BASE_PRICE + (average_future_occupation ** EXP) * NORMALIZATION
+    average_future_disponibility = future_state["trend"].iloc[0]
+    current_price = BASE_PRICE + ((NUM_SLOTS-average_future_disponibility) ** EXP) * NORMALIZATION
 
     mqttServer.clientMQTT.publish(PRICE_TOPIC, '{:f}'.format(current_price), qos=QOS, retain=True)
 
@@ -104,13 +103,13 @@ if __name__ == "__main__":
     forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail()
 
     #8.0 plot of the forecast
-    #plt2 = my_model.plot(forecast, uncertainty=True)
-   # plt2.show()
+    plt2 = my_model.plot(forecast, uncertainty=True)
+    plt2.show()
     fzwait()
 
 
 
-   # plt3 = my_model.plot_components(forecast)
-   # plt3.show()
+    plt3 = my_model.plot_components(forecast)
+    plt3.show()
     fzwait()
 
