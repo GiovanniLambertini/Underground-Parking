@@ -287,12 +287,12 @@ def exit():
         parked = db.session.query(Parked).filter(Parked.userId == body['userId'],Parked.locationId == body['locationId']).order_by(Parked.entranceTimestamp.desc()).first()
         booking = db.session.query(Booking).filter(Booking.userId == body['userId'], Booking.locationId == body['locationId'], Booking.bookingStatus == 'using',).order_by(Booking.timestamp.desc()).first()
 
-    booking.bookingStatus = 'used'
-    db.session.commit()
-
-    if parked == None:
+    if booking == None:
         mqttServer.clientMQTT.publish(BARRIER_OPENING + 'exit', '0', qos=QOS)
         return jsonify({'successful': False, 'error': 'Parking ticket not found'}), '401 Unauthorized'
+
+    booking.bookingStatus = 'used'
+    db.session.commit()
 
     parked.exitTimestamp = datetime.utcnow()
     db.session.commit()
