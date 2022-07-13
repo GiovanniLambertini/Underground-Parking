@@ -196,7 +196,7 @@ public class PlaceholderFragment extends Fragment {
                             price.setText( String.format("%.2f", Double.parseDouble(messageReceived))+" €/h");
                         else if(topic.contains(BASE_TOPIC+"available_slots"))
                             available_slots.setText("Posti disponibili: " + messageReceived);
-                        else if(topic.contains(BASE_TOPIC+"total_price_paid"))
+                        else if(topic.contains(BASE_TOPIC+"total_price_paid/1"))
                             access_code.setText("Costo parcheggio: " + messageReceived+" €");
                         else if(topic.contains(BASE_TOPIC+"slot_state")) {
                             String[] topicParts = topic.split("/");
@@ -262,8 +262,10 @@ public class PlaceholderFragment extends Fragment {
                                     try {
                                         jsonObject = new JSONObject(response.toString());
                                         String code = jsonObject.getString("code");
-
-                                        access_code.setText("Codice Accesso: " + code);
+                                        if(!code.equals("null"))
+                                            access_code.setText("Codice Accesso: " + code);
+                                        else
+                                            access_code.setText("Posti esauriti...");
                                     } catch (JSONException e) {
                                         access_code.setText("Codice Accesso non disponibile..");
                                     }

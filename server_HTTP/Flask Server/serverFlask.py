@@ -207,7 +207,6 @@ def bookParkSlot():
     else:
         previousAvailableSlots = previousAvailableSlots[0]
     if previousAvailableSlots < 1:
-        #previousAvailableSlots=6
         return jsonify({'successful': False, 'code': None}), '200 Full parking'
 
     booking = Booking(body['userId'], body['locationId'], code)
@@ -299,7 +298,7 @@ def exit():
 
     #Calcolo il prezzo da pagare
     total_hour = (dateutil.parser.parse(parked.exitTimestamp.isoformat()) - dateutil.parser.parse(parked.entranceTimestamp.isoformat())).total_seconds()//3600 + 1
-    totalPrice = parked.pricePerHour*total_hour
+    totalPrice = round((parked.pricePerHour*total_hour), 2)
 
     mqttServer.clientMQTT.publish(FINAL_PRICE + str(parked.userId), totalPrice, qos=QOS)
 
