@@ -87,29 +87,3 @@ if __name__ == "__main__":
 
     mqttServer.clientMQTT.publish(PRICE_TOPIC, '{:f}'.format(current_price), qos=QOS, retain=True)
 
-    #4.0 model creation
-    my_model = Prophet(interval_width=0.95, weekly_seasonality=True)
-
-
-    #5.0 fit the data
-    my_model.fit(df)
-
-    #6.0 creation of future dataframe
-    future_dates = my_model.make_future_dataframe(periods=36, freq='MS')
-    print(future_dates.tail())
-
-    #7.0 forecast
-    forecast = my_model.predict(future_dates)
-    forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail()
-
-    #8.0 plot of the forecast
-    plt2 = my_model.plot(forecast, uncertainty=True)
-    plt2.show()
-    fzwait()
-
-
-
-    plt3 = my_model.plot_components(forecast)
-    plt3.show()
-    fzwait()
-
