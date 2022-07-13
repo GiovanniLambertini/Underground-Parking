@@ -261,8 +261,13 @@ def enter():
     db.session.add(parked)
     db.session.commit()
 
+    nearest_slot = 1
+
+    slots = db.session.query(SlotAvailability).group_by(SlotAvailability.slotId).order_by(SlotAvailability.timestamp.desc())
+    print (slots)
+
     mqttServer.clientMQTT.publish(BARRIER_OPENING + 'enter', '1', qos=QOS)
-    return jsonify({'successful': True}), '200 OK'
+    return jsonify({'successful': True, 'slot': nearest_slot}), '200 OK'
 
 @app.route('/exit', methods=['POST'])
 def exit():
